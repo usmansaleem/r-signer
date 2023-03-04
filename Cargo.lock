@@ -124,6 +124,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "bls-keystore"
+version = "0.0.0"
+
+[[package]]
 name = "bytes"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
