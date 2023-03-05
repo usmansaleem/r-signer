@@ -16,9 +16,22 @@ pub fn decrypt(keystore_json: String, password: String) -> Result<String, String
 }
 
 fn normalize_password(password: String) -> String {
-    password.nfkd().collect::<String>()
+    password
+        .nfkd()
+        .collect::<String>()
+        .chars()
+        .filter(|c| !is_control(c))
+        .collect::<String>()
 }
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
+fn is_c0(c: &char) -> bool {
+    *c >= '\u{0000}' && *c <= '\u{001F}'
+}
+
+fn is_c1(c: &char) -> bool {
+    *c >= '\u{0080}' && *c <= '\u{009F}'
+}
+
+fn is_control(c: &char) -> bool {
+    is_c0(c) || is_c1(c) || *c == '\u{007F}'
 }
