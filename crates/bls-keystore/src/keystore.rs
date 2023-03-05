@@ -1,5 +1,5 @@
 //! Keystore JSON definition
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -63,7 +63,14 @@ pub struct Keystore {
 
 pub fn parse_keystore(json: &str) -> Result<Keystore> {
     let keystore: Keystore = serde_json::from_str(json)?;
-    Ok(keystore)
+    if keystore.version != 4 {
+        Err(anyhow!(
+            "Keystore version {} is not supported",
+            keystore.version
+        ))
+    } else {
+        Ok(keystore)
+    }
 }
 
 #[cfg(test)]
