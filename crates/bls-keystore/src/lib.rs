@@ -8,13 +8,29 @@ pub mod keystore;
 #[cfg(test)]
 mod tests;
 
+use anyhow::Result;
+use keystore::KdfParams;
 use unicode_normalization::UnicodeNormalization;
 
 /// Decrypt BLS12-381 keystore with provided password. Returns decrypted key
-/// as hex string.
-pub fn decrypt(keystore_json: String, password: String) -> Result<String, String> {
-    let n_password = normalize_password(password);
-    return Ok(String::from("0x0"));
+/// as bytes
+pub fn decrypt(keystore_json: String, password: String) -> Result<Vec<u8>> {
+    let normalized_password = normalize_password(password);
+    let keystore = keystore::parse_keystore(keystore_json.as_str())?;
+    let kdf_param = keystore.crypto.kdf;
+    let param = match kdf_param {
+        KdfParams::SCrypt { params, message: _ } => {
+            params.decryption_key(normalized_password.as_str())
+        }
+        // TODO: FIXME
+        KdfParams::PbKdf2 {
+            params: _,
+            message: _,
+        } => Ok(vec![0u8; 1]),
+    };
+    //FIXME
+    let decoded = hex::decode("0x0")?;
+    Ok(decoded)
 }
 
 fn normalize_password(password: String) -> String {

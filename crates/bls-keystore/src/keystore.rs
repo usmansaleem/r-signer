@@ -1,5 +1,7 @@
 //! Keystore JSON definition
-use anyhow::{anyhow, Result};
+
+use anyhow::{anyhow, bail, Result};
+use scrypt::{scrypt, Params};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -29,11 +31,30 @@ pub enum KdfParams {
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
 pub struct SCryptParams {
-    pub dklen: i32,
-    pub n: i32,
-    pub p: i32,
-    pub r: i32,
+    pub dklen: usize,
+    pub n: u32,
+    pub p: u32,
+    pub r: u32,
     pub salt: String,
+}
+
+impl SCryptParams {
+    pub fn decryption_key(&self, password: &str) -> Result<Vec<u8>> {
+        let log_n = f64::log2(self.n as f64).round() as u8;
+        let param_result = Params::new(log_n, self.r, self.p, self.dklen);
+        let params = match param_result {
+            Ok(params) => params,
+            Err(err) => bail!("Error constructing Params {}", err.to_string()),
+        };
+        let salt = hex::decode(self.salt.to_owned())?;
+        let mut result = vec![0u8; self.dklen];
+        let scrypt_result = scrypt(password.as_bytes(), &salt, &params, &mut result);
+        match scrypt_result {
+            Err(err) => bail!("Error in scrypt method {}", err),
+            _ => (),
+        }
+        Ok(result)
+    }
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
@@ -214,5 +235,24 @@ mod tests {
             message: "".to_string(),
         };
         assert_eq!(keystore.crypto.kdf, expected_kdf);
+    }
+
+    #[test]
+    fn scrypt_decryption_key() {
+        let password = "testpassword";
+        let params = SCryptParams {
+            dklen: 32 as usize,
+            n: 512,
+            p: 1,
+            r: 8,
+            salt: "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3".to_string(),
+        };
+
+        let result = params.decryption_key(&password).unwrap();
+        let encoded = hex::encode(&result);
+        assert_eq!(
+            encoded,
+            "7674a6e092e0b3132921c0cceb3a40c84f0333b8e11220a734470bb572b5da24"
+        );
     }
 }
