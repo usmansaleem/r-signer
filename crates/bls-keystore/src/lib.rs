@@ -3,6 +3,8 @@
 //!
 //![1]: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2335.md
 
+pub mod keystore;
+
 #[cfg(test)]
 mod tests;
 
