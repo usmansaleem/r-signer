@@ -17,16 +17,13 @@ use unicode_normalization::UnicodeNormalization;
 pub fn decrypt(keystore_json: String, password: String) -> Result<Vec<u8>> {
     let normalized_password = normalize_password(password);
     let keystore = keystore::parse_keystore(keystore_json.as_str())?;
-    let kdf_param = keystore.crypto.kdf;
-    let param = match kdf_param {
+    let decryption_key = match keystore.crypto.kdf {
         KdfParams::SCrypt { params, message: _ } => {
             params.decryption_key(normalized_password.as_str())
         }
-        // TODO: FIXME
-        KdfParams::PbKdf2 {
-            params: _,
-            message: _,
-        } => Ok(vec![0u8; 1]),
+        KdfParams::PbKdf2 { params, message: _ } => {
+            params.decryption_key(normalized_password.as_str())
+        }
     };
     //FIXME
     let decoded = hex::decode("0x0")?;

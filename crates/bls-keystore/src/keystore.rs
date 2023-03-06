@@ -5,7 +5,7 @@ use pbkdf2::pbkdf2_hmac;
 use scrypt::{scrypt, Params};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::Sha256;
+use sha2::{Sha256, Sha512};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -70,7 +70,11 @@ impl Pbkdf2Params {
     pub fn decryption_key(&self, password: &str) -> Result<Vec<u8>> {
         let mut result = vec![0u8; self.dklen];
         let salt = hex::decode(&self.salt)?;
-        pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, self.c, &mut result);
+        match self.prf.as_str() {
+            "hmac-sha256" => pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, self.c, &mut result),
+            "hmac-sha512" => pbkdf2_hmac::<Sha512>(password.as_bytes(), &salt, self.c, &mut result),
+            _ => bail!("Unsupported prf for pbkdf2: {}", &self.prf),
+        }
         Ok(result.to_vec())
     }
 }
