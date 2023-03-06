@@ -1,9 +1,11 @@
 //! Keystore JSON definition
 
 use anyhow::{anyhow, bail, Result};
+use pbkdf2::pbkdf2_hmac;
 use scrypt::{scrypt, Params};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::Sha256;
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -46,12 +48,11 @@ impl SCryptParams {
             Ok(params) => params,
             Err(err) => bail!("Error constructing Params {}", err.to_string()),
         };
-        let salt = hex::decode(self.salt.to_owned())?;
+        let salt = hex::decode(&self.salt)?;
         let mut result = vec![0u8; self.dklen];
         let scrypt_result = scrypt(password.as_bytes(), &salt, &params, &mut result);
-        match scrypt_result {
-            Err(err) => bail!("Error in scrypt method {}", err),
-            _ => (),
+        if let Err(err) = scrypt_result {
+            bail!("Error in scrypt method {}", err)
         }
         Ok(result)
     }
@@ -59,10 +60,19 @@ impl SCryptParams {
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
 pub struct Pbkdf2Params {
-    pub dklen: i32,
-    pub c: i32,
+    pub dklen: usize,
+    pub c: u32,
     pub prf: String,
     pub salt: String,
+}
+
+impl Pbkdf2Params {
+    pub fn decryption_key(&self, password: &str) -> Result<Vec<u8>> {
+        let mut result = vec![0u8; self.dklen];
+        let salt = hex::decode(&self.salt)?;
+        pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, self.c, &mut result);
+        Ok(result.to_vec())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -241,18 +251,37 @@ mod tests {
     fn scrypt_decryption_key() {
         let password = "testpassword";
         let params = SCryptParams {
-            dklen: 32 as usize,
+            dklen: 32,
             n: 512,
             p: 1,
             r: 8,
             salt: "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3".to_string(),
         };
 
-        let result = params.decryption_key(&password).unwrap();
-        let encoded = hex::encode(&result);
+        let result = params.decryption_key(password).unwrap();
+        let encoded = hex::encode(result);
         assert_eq!(
             encoded,
             "7674a6e092e0b3132921c0cceb3a40c84f0333b8e11220a734470bb572b5da24"
+        );
+    }
+
+    #[test]
+    fn pbkdf2_decryption_key() {
+        let password = "testpassword";
+        let params = Pbkdf2Params {
+            dklen: 32,
+            prf: "hmac-sha256".to_string(),
+            c: 512,
+            salt: "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3".to_string(),
+        };
+
+        let result = params.decryption_key(password).unwrap();
+        assert_eq!(result.len(), 32);
+        let encoded = hex::encode(result);
+        assert_eq!(
+            encoded,
+            "9fae37a71c78f05c4d43b7215766c4ee9339db2e59632b2058cf17a9fadb589f"
         );
     }
 }
