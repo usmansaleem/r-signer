@@ -4,15 +4,15 @@ use anyhow::{anyhow, bail, Result};
 use pbkdf2::pbkdf2_hmac;
 use scrypt::{scrypt, Params};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use sha2::{Sha256, Sha512};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Module {
+pub struct ChecksumModule {
     pub function: String,
-    pub params: HashMap<String, Value>,
-    pub message: String,
+    pub params: HashMap<String, String>,
+    #[serde(with = "hex")]
+    pub message: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -25,7 +25,8 @@ pub struct CipherParams {
 pub struct CipherModule {
     pub function: String,
     pub params: CipherParams,
-    pub message: String,
+    #[serde(with = "hex")]
+    pub message: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
@@ -108,7 +109,7 @@ impl Pbkdf2Params {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Crypto {
     pub kdf: KdfParams,
-    pub checksum: Module,
+    pub checksum: ChecksumModule,
     pub cipher: CipherModule,
 }
 

@@ -21,8 +21,8 @@ pub fn decrypt(keystore_json: &str, password: &str) -> Result<Vec<u8>> {
         .crypto
         .kdf
         .decryption_key(normalized_password.as_str())?;
-    let cipher_message = hex::decode(keystore.crypto.cipher.message)?;
-    let checksum_message = hex::decode(keystore.crypto.checksum.message)?;
+    let cipher_message = keystore.crypto.cipher.message;
+    let checksum_message = keystore.crypto.checksum.message;
 
     if !validate_password(&decryption_key, &cipher_message, &checksum_message) {
         bail!("Password verification failed");

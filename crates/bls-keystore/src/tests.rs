@@ -77,8 +77,8 @@ fn password_verified() {
         .kdf
         .decryption_key(normalized_password.as_str())
         .unwrap();
-    let cipher_message = hex::decode(keystore.crypto.cipher.message).unwrap();
-    let checksum_message = hex::decode(keystore.crypto.checksum.message).unwrap();
+    let cipher_message = keystore.crypto.cipher.message;
+    let checksum_message = keystore.crypto.checksum.message;
 
     let valid_password = validate_password(&decryption_key, &cipher_message, &checksum_message);
     assert!(valid_password);
