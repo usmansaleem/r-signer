@@ -36,7 +36,7 @@ fn normalize_works_with_non_control_char() {
 }
 
 #[test]
-fn password_verified() {
+fn decrypt_key_using_scrypt() {
     let keystore_json = r#"
     {
       "crypto" : {
@@ -70,16 +70,12 @@ fn password_verified() {
       "uuid" : "eb329e94-6d98-4999-a773-6162fa0dd13a"
     }"#;
 
-    let normalized_password = normalize_password("𝔱𝔢𝔰𝔱𝔭𝔞𝔰𝔰𝔴𝔬𝔯𝔡🔑");
-    let keystore = keystore::parse_keystore(keystore_json).unwrap();
-    let decryption_key = keystore
-        .crypto
-        .kdf
-        .decryption_key(normalized_password.as_str())
-        .unwrap();
-    let cipher_message = keystore.crypto.cipher.message;
-    let checksum_message = keystore.crypto.checksum.message;
+    let password = "𝔱𝔢𝔰𝔱𝔭𝔞𝔰𝔰𝔴𝔬𝔯𝔡🔑";
 
-    let valid_password = validate_password(&decryption_key, &cipher_message, &checksum_message);
-    assert!(valid_password);
+    let expected_key = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f";
+    let expected_key_vec = hex::decode(expected_key).unwrap();
+
+    let decrypted_key = decrypt(keystore_json, password).unwrap();
+
+    assert_eq!(decrypted_key, expected_key_vec);
 }

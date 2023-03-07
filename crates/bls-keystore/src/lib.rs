@@ -8,12 +8,15 @@ pub mod keystore;
 #[cfg(test)]
 mod tests;
 
+use aes::cipher::{KeyIvInit, StreamCipher};
 use anyhow::{bail, Result};
+use keystore::CipherModule;
 use sha2::{Digest, Sha256};
 use unicode_normalization::UnicodeNormalization;
+type Aes128Ctr128BE = ctr::Ctr128BE<aes::Aes128>;
 
 /// Decrypt BLS12-381 keystore with provided password. Returns decrypted key
-/// as bytes
+/// as Vec<u8>
 pub fn decrypt(keystore_json: &str, password: &str) -> Result<Vec<u8>> {
     let normalized_password = normalize_password(password);
     let keystore = keystore::parse_keystore(keystore_json)?;
@@ -21,32 +24,43 @@ pub fn decrypt(keystore_json: &str, password: &str) -> Result<Vec<u8>> {
         .crypto
         .kdf
         .decryption_key(normalized_password.as_str())?;
-    let cipher_message = keystore.crypto.cipher.message;
-    let checksum_message = keystore.crypto.checksum.message;
 
-    if !validate_password(&decryption_key, &cipher_message, &checksum_message) {
+    if !validate_password(
+        &decryption_key,
+        &keystore.crypto.cipher.message,
+        &keystore.crypto.checksum.message,
+    ) {
         bail!("Password verification failed");
     }
 
-    //FIXME
-    let decoded = hex::decode("0x0")?;
-    Ok(decoded)
+    secret_decryption(&decryption_key, &keystore.crypto.cipher)
 }
 
-fn secret_decryption(
-    decryption_key: &[u8],
-    cipher_function: &str,
-    cipher_message: &[u8],
-) -> Result<Vec<u8>> {
-    if !cipher_function.eq_ignore_ascii_case("aes-128-ctr") {
+fn secret_decryption(decryption_key: &[u8], cipher: &CipherModule) -> Result<Vec<u8>> {
+    if !cipher.function.eq_ignore_ascii_case("aes-128-ctr") {
         bail!(
             "Unsupported cipher function {}, consider reporting it to support team.",
-            cipher_function
+            cipher.function
         );
     }
 
-    let decoded = hex::decode("0x0")?;
-    Ok(decoded)
+    // for aes-128, the decryption key size must be >= 16
+    if decryption_key.len() < 16 {
+        bail!("Invalid decryption key length");
+    }
+
+    let dk_slice = &decryption_key[0..16];
+    let iv = &cipher.params.iv[..];
+    let message = &cipher.message;
+
+    let mut buf = vec![0; message.len()];
+    let mut cipherctr = Aes128Ctr128BE::new_from_slices(dk_slice, iv)?;
+    let res = cipherctr.apply_keystream_b2b(message, &mut buf);
+    if let Err(err) = res {
+        println!("{}", err);
+        bail!("Error applying cipher: {}", err)
+    }
+    Ok(buf)
 }
 
 fn validate_password(
