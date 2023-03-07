@@ -59,7 +59,8 @@ pub struct SCryptParams {
     pub n: u32,
     pub p: u32,
     pub r: u32,
-    pub salt: String,
+    #[serde(with = "hex")]
+    pub salt: Vec<u8>,
 }
 
 impl SCryptParams {
@@ -70,9 +71,8 @@ impl SCryptParams {
             Ok(params) => params,
             Err(err) => bail!("Error constructing Params {}", err.to_string()),
         };
-        let salt = hex::decode(&self.salt)?;
         let mut result = vec![0u8; self.dklen];
-        let scrypt_result = scrypt(password.as_bytes(), &salt, &params, &mut result);
+        let scrypt_result = scrypt(password.as_bytes(), &self.salt, &params, &mut result);
         if let Err(err) = scrypt_result {
             bail!("Error in scrypt method {}", err)
         }
@@ -85,16 +85,20 @@ pub struct Pbkdf2Params {
     pub dklen: usize,
     pub c: u32,
     pub prf: String,
-    pub salt: String,
+    #[serde(with = "hex")]
+    pub salt: Vec<u8>,
 }
 
 impl Pbkdf2Params {
     pub fn decryption_key(&self, password: &str) -> Result<Vec<u8>> {
         let mut result = vec![0u8; self.dklen];
-        let salt = hex::decode(&self.salt)?;
         match self.prf.as_str() {
-            "hmac-sha256" => pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, self.c, &mut result),
-            "hmac-sha512" => pbkdf2_hmac::<Sha512>(password.as_bytes(), &salt, self.c, &mut result),
+            "hmac-sha256" => {
+                pbkdf2_hmac::<Sha256>(password.as_bytes(), &self.salt, self.c, &mut result)
+            }
+            "hmac-sha512" => {
+                pbkdf2_hmac::<Sha512>(password.as_bytes(), &self.salt, self.c, &mut result)
+            }
             _ => bail!("Unsupported prf for pbkdf2: {}", &self.prf),
         }
         Ok(result.to_vec())
@@ -177,8 +181,10 @@ mod tests {
                 n: 262144,
                 p: 1,
                 r: 8,
-                salt: "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"
-                    .to_string(),
+                salt: hex::decode(
+                    "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
+                )
+                .unwrap(),
             },
             message: "".to_string(),
         };
@@ -265,8 +271,10 @@ mod tests {
                 dklen: 32,
                 c: 262144,
                 prf: "hmac-sha256".to_string(),
-                salt: "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3"
-                    .to_string(),
+                salt: hex::decode(
+                    "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
+                )
+                .unwrap(),
             },
             message: "".to_string(),
         };
@@ -281,7 +289,8 @@ mod tests {
             n: 512,
             p: 1,
             r: 8,
-            salt: "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3".to_string(),
+            salt: hex::decode("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+                .unwrap(),
         };
 
         let result = params.decryption_key(password).unwrap();
@@ -299,7 +308,8 @@ mod tests {
             dklen: 32,
             prf: "hmac-sha256".to_string(),
             c: 512,
-            salt: "d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3".to_string(),
+            salt: hex::decode("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+                .unwrap(),
         };
 
         let result = params.decryption_key(password).unwrap();
