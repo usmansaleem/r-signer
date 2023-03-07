@@ -15,6 +15,19 @@ pub struct Module {
     pub message: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CipherParams {
+    #[serde(with = "hex")]
+    pub iv: Vec<u8>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CipherModule {
+    pub function: String,
+    pub params: CipherParams,
+    pub message: String,
+}
+
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
 #[serde(tag = "function")]
 pub enum KdfParams {
@@ -92,7 +105,7 @@ impl Pbkdf2Params {
 pub struct Crypto {
     pub kdf: KdfParams,
     pub checksum: Module,
-    pub cipher: Module,
+    pub cipher: CipherModule,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

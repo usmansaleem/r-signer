@@ -25,10 +25,26 @@ pub fn decrypt(keystore_json: &str, password: &str) -> Result<Vec<u8>> {
     let checksum_message = hex::decode(keystore.crypto.checksum.message)?;
 
     if !validate_password(&decryption_key, &cipher_message, &checksum_message) {
-        bail!("Password verficiation failed");
+        bail!("Password verification failed");
     }
 
     //FIXME
+    let decoded = hex::decode("0x0")?;
+    Ok(decoded)
+}
+
+fn secret_decryption(
+    decryption_key: &[u8],
+    cipher_function: &str,
+    cipher_message: &[u8],
+) -> Result<Vec<u8>> {
+    if !cipher_function.eq_ignore_ascii_case("aes-128-ctr") {
+        bail!(
+            "Unsupported cipher function {}, consider reporting it to support team.",
+            cipher_function
+        );
+    }
+
     let decoded = hex::decode("0x0")?;
     Ok(decoded)
 }
