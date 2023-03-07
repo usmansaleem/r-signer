@@ -31,6 +31,15 @@ pub enum KdfParams {
     },
 }
 
+impl KdfParams {
+    pub fn decryption_key(&self, normalized_password: &str) -> Result<Vec<u8>> {
+        match self {
+            KdfParams::SCrypt { params, message: _ } => params.decryption_key(normalized_password),
+            KdfParams::PbKdf2 { params, message: _ } => params.decryption_key(normalized_password),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
 pub struct SCryptParams {
     pub dklen: usize,

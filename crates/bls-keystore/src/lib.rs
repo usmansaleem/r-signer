@@ -8,29 +8,46 @@ pub mod keystore;
 #[cfg(test)]
 mod tests;
 
-use anyhow::Result;
-use keystore::KdfParams;
+use anyhow::{bail, Result};
+use sha2::{Digest, Sha256};
 use unicode_normalization::UnicodeNormalization;
 
 /// Decrypt BLS12-381 keystore with provided password. Returns decrypted key
 /// as bytes
-pub fn decrypt(keystore_json: String, password: String) -> Result<Vec<u8>> {
+pub fn decrypt(keystore_json: &str, password: &str) -> Result<Vec<u8>> {
     let normalized_password = normalize_password(password);
-    let keystore = keystore::parse_keystore(keystore_json.as_str())?;
-    let decryption_key = match keystore.crypto.kdf {
-        KdfParams::SCrypt { params, message: _ } => {
-            params.decryption_key(normalized_password.as_str())
-        }
-        KdfParams::PbKdf2 { params, message: _ } => {
-            params.decryption_key(normalized_password.as_str())
-        }
-    };
+    let keystore = keystore::parse_keystore(keystore_json)?;
+    let decryption_key = keystore
+        .crypto
+        .kdf
+        .decryption_key(normalized_password.as_str())?;
+    let cipher_message = hex::decode(keystore.crypto.cipher.message)?;
+    let checksum_message = hex::decode(keystore.crypto.checksum.message)?;
+
+    if !validate_password(&decryption_key, &cipher_message, &checksum_message) {
+        bail!("Password verficiation failed");
+    }
+
     //FIXME
     let decoded = hex::decode("0x0")?;
     Ok(decoded)
 }
 
-fn normalize_password(password: String) -> String {
+fn validate_password(
+    decryption_key: &[u8],
+    cipher_message: &[u8],
+    checksum_message: &[u8],
+) -> bool {
+    let dk_slice = &decryption_key[16..32];
+    let pre_image = [dk_slice, cipher_message].concat();
+    let mut hasher = Sha256::new();
+    hasher.update(pre_image);
+    let checksum = hasher.finalize();
+
+    checksum.eq(checksum_message.into())
+}
+
+fn normalize_password(password: &str) -> String {
     password
         .nfkd()
         .collect::<String>()
