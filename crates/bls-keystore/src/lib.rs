@@ -36,11 +36,11 @@ pub fn decrypt(keystore_json: &str, password: &str) -> Result<Vec<u8>> {
     secret_decryption(&decryption_key, &keystore.crypto.cipher)
 }
 
-fn secret_decryption(decryption_key: &[u8], cipher: &CipherModule) -> Result<Vec<u8>> {
-    if !cipher.function.eq_ignore_ascii_case("aes-128-ctr") {
+fn secret_decryption(decryption_key: &[u8], cipher_module: &CipherModule) -> Result<Vec<u8>> {
+    if !cipher_module.function.eq_ignore_ascii_case("aes-128-ctr") {
         bail!(
             "Unsupported cipher function {}, consider reporting it to support team.",
-            cipher.function
+            cipher_module.function
         );
     }
 
@@ -50,17 +50,21 @@ fn secret_decryption(decryption_key: &[u8], cipher: &CipherModule) -> Result<Vec
     }
 
     let dk_slice = &decryption_key[0..16];
-    let iv = &cipher.params.iv[..];
-    let message = &cipher.message;
+    let iv = &cipher_module.params.iv[..];
+    let message = &cipher_module.message;
 
     let mut buf = vec![0; message.len()];
-    let mut cipherctr = Aes128Ctr128BE::new_from_slices(dk_slice, iv)?;
-    let res = cipherctr.apply_keystream_b2b(message, &mut buf);
-    if let Err(err) = res {
-        println!("{}", err);
-        bail!("Error applying cipher: {}", err)
+    let cipher_result = Aes128Ctr128BE::new_from_slices(dk_slice, iv);
+    let mut cipher = match cipher_result {
+        Ok(cipher) => cipher,
+        Err(err) => bail!("Error creating cipher: {}", err)
+    };
+
+    let decrypt_result = cipher.apply_keystream_b2b(message, &mut buf);
+    match decrypt_result {
+        Ok(()) => Ok(buf),
+        Err(err) => bail!("Error applying cipher: {}", err)
     }
-    Ok(buf)
 }
 
 fn validate_password(
