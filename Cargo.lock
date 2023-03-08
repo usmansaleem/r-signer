@@ -966,6 +966,7 @@ dependencies = [
 name = "r-signer"
 version = "0.0.0"
 dependencies = [
+ "bls-keystore",
  "rocket",
 ]
 
