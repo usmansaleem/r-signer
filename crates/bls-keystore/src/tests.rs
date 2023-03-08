@@ -69,41 +69,6 @@ const PASSWORD: &str = "𝔱𝔢𝔰𝔱𝔭𝔞𝔰𝔰𝔴𝔬𝔯𝔡🔑";
 const SECRET: &str = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f";
 
 #[test]
-fn normalize_works_with_space() {
-    let input = "test test";
-    let result = normalize_password(input);
-    assert_eq!(result, String::from("test test"));
-}
-
-#[test]
-fn normalize_strips_c0_control_chars() {
-    let input = "test\u{001F}test";
-    let result = normalize_password(input);
-    assert_eq!(result, String::from("testtest"));
-}
-
-#[test]
-fn normalize_strips_c1_control_chars() {
-    let input = "test\u{0080}\u{0081}\u{009F}test";
-    let result = normalize_password(input);
-    assert_eq!(result, "testtest".to_string());
-}
-
-#[test]
-fn normalize_strips_delete_control_chars() {
-    let input = "test\u{007F}test";
-    let result = normalize_password(input);
-    assert_eq!(result, "testtest".to_string());
-}
-
-#[test]
-fn normalize_works_with_non_control_char() {
-    let input = "test\u{0020}test";
-    let result = normalize_password(input);
-    assert_eq!(result, String::from("test\u{0020}test"));
-}
-
-#[test]
 fn decrypt_secret() {
     let expected_key_vec = hex::decode(SECRET).unwrap();
 

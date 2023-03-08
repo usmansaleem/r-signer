@@ -1,11 +1,14 @@
 //! Keystore JSON definition
 
+use aes::cipher::{KeyIvInit, StreamCipher};
 use anyhow::{anyhow, bail, Result};
 use pbkdf2::pbkdf2_hmac;
 use scrypt::{scrypt, Params};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Sha512};
 use std::collections::HashMap;
+
+type Aes128Ctr128BE = ctr::Ctr128BE<aes::Aes128>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ChecksumModule {
@@ -27,6 +30,36 @@ pub struct CipherModule {
     pub params: CipherParams,
     #[serde(with = "hex")]
     pub message: Vec<u8>,
+}
+
+impl CipherModule {
+    pub fn decrypt_secret(&self, decryption_key: &[u8]) -> Result<Vec<u8>> {
+        if !self.function.eq_ignore_ascii_case("aes-128-ctr") {
+            bail!("Unsupported cipher function {}", self.function);
+        }
+
+        // for aes-128, the decryption key size must be >= 16
+        if decryption_key.len() < 16 {
+            bail!("Invalid decryption key length");
+        }
+
+        let dk_slice = &decryption_key[0..16];
+        let iv = &self.params.iv[..];
+        let message = &self.message;
+
+        let mut buf = vec![0; message.len()];
+        let cipher_result = Aes128Ctr128BE::new_from_slices(dk_slice, iv);
+        let mut cipher = match cipher_result {
+            Ok(cipher) => cipher,
+            Err(err) => bail!("Error creating cipher: {}", err),
+        };
+
+        let decrypt_result = cipher.apply_keystream_b2b(message, &mut buf);
+        match decrypt_result {
+            Ok(()) => Ok(buf),
+            Err(err) => bail!("Error applying cipher: {}", err),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
