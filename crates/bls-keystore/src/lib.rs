@@ -57,13 +57,13 @@ fn secret_decryption(decryption_key: &[u8], cipher_module: &CipherModule) -> Res
     let cipher_result = Aes128Ctr128BE::new_from_slices(dk_slice, iv);
     let mut cipher = match cipher_result {
         Ok(cipher) => cipher,
-        Err(err) => bail!("Error creating cipher: {}", err)
+        Err(err) => bail!("Error creating cipher: {}", err),
     };
 
     let decrypt_result = cipher.apply_keystream_b2b(message, &mut buf);
     match decrypt_result {
         Ok(()) => Ok(buf),
-        Err(err) => bail!("Error applying cipher: {}", err)
+        Err(err) => bail!("Error applying cipher: {}", err),
     }
 }
 

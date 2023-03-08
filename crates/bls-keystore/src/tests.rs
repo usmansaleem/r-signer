@@ -105,11 +105,23 @@ fn normalize_works_with_non_control_char() {
 
 #[test]
 fn decrypt_secret() {
-
     let expected_key_vec = hex::decode(SECRET).unwrap();
 
     let decrypted_key = decrypt(SCRYPT_TEST_VECTOR, PASSWORD).unwrap();
     assert_eq!(decrypted_key, expected_key_vec);
     let decrypted_key = decrypt(PBKDF2_TEST_VECTOR, PASSWORD).unwrap();
     assert_eq!(decrypted_key, expected_key_vec);
+}
+
+#[test]
+fn invalid_keystore() {
+    let decrypted_result = decrypt("{}", PASSWORD);
+    assert!(&decrypted_result.is_err());
+}
+
+#[test]
+fn decrypt_keystore_with_invalid_password() {
+    let decrypted_result = decrypt(SCRYPT_TEST_VECTOR, "test");
+    let err = decrypted_result.err().unwrap();
+    assert_eq!(err.to_string(), "Password verification failed");
 }
