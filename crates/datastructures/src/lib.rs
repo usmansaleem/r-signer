@@ -25,5 +25,5 @@ pub fn compute_domain(
         genesis_validators_root: *genesis_validators_root,
     };
     let fork_data_root = fork_data.hash_tree_root()?;
-    Ok([&domain_type[..], &fork_data_root.as_ref()[..28]].concat())
+    Ok([domain_type, &fork_data_root.as_ref()[..28]].concat())
 }
