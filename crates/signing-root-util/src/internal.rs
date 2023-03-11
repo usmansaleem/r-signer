@@ -1,4 +1,4 @@
-use super::BeaconBlockHeader;
+use super::{AttestationData, BeaconBlockHeader};
 use anyhow::Result;
 use ssz_rs::prelude::*;
 
@@ -35,6 +35,41 @@ pub struct InternalForkData {
 struct InternalSigningData {
     pub object_root: Node,
     pub domain: [u8; 32],
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct InternalCheckpoint {
+    pub epoch: u64,
+    pub root: [u8; 32],
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct InternalAttestationData {
+    pub slot: u64,
+    pub index: u64,
+    pub beacon_block_root: [u8; 32],
+    pub source: InternalCheckpoint,
+    pub target: InternalCheckpoint,
+}
+
+impl TryFrom<&AttestationData> for InternalAttestationData {
+    type Error = &'static str;
+
+    fn try_from(value: &AttestationData) -> Result<Self, Self::Error> {
+        Ok(Self {
+            slot: value.slot,
+            index: value.index,
+            beacon_block_root: value.beacon_block_root,
+            source: InternalCheckpoint {
+                epoch: value.source.epoch,
+                root: value.source.root,
+            },
+            target: InternalCheckpoint {
+                epoch: value.target.epoch,
+                root: value.target.root,
+            },
+        })
+    }
 }
 
 pub fn compute_signing_root(hash_tree_root: &Node, domain: &[u8; 32]) -> Result<Vec<u8>> {

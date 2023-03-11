@@ -5,7 +5,7 @@ mod internal;
 #[cfg(test)]
 mod tests;
 
-use crate::internal::{InternalBeaconBlockHeader, InternalForkData};
+use crate::internal::{InternalAttestationData, InternalBeaconBlockHeader, InternalForkData};
 use anyhow::Result;
 use serde_aux::prelude::deserialize_number_from_string;
 use serde_hex::{SerHex, StrictPfx};
@@ -52,6 +52,26 @@ pub struct ForkInfo {
     pub genesis_validators_root: Bytes32,
 }
 
+#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AttestationData {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub slot: u64,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub index: u64,
+    #[serde(with = "SerHex::<StrictPfx>")]
+    pub beacon_block_root: Bytes32,
+    pub source: Checkpoint,
+    pub target: Checkpoint,
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Checkpoint {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub epoch: u64,
+    #[serde(with = "SerHex::<StrictPfx>")]
+    pub root: Bytes32,
+}
+
 pub fn signing_root_for_sign_block_header(
     block_header: &BeaconBlockHeader,
     fork_info: &ForkInfo,
@@ -61,6 +81,30 @@ pub fn signing_root_for_sign_block_header(
     let domain = get_domain_sign_block(block_header.slot, fork_info)?;
 
     let result_vec = internal::compute_signing_root(&block_header_root, &domain)?;
+    let result: Bytes32 = result_vec
+        .try_into()
+        .map_err(|_| SigningRootError::VectorConversionError)?;
+    Ok(result)
+}
+
+pub fn signing_root_for_sign_attestation_data(
+    attestation_data: &AttestationData,
+    fork_info: &ForkInfo,
+) -> Result<Bytes32> {
+    // TODO: Move as constant
+    let domain_beacon_attester: Bytes4 = hex_literal::hex!("01000000");
+
+    let domain = get_domain(
+        fork_info,
+        &domain_beacon_attester,
+        attestation_data.target.epoch,
+    )?;
+
+    let hash_tree_root = InternalAttestationData::try_from(attestation_data)
+        .unwrap() // will not panic
+        .hash_tree_root()?;
+
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
     let result: Bytes32 = result_vec
         .try_into()
         .map_err(|_| SigningRootError::VectorConversionError)?;
