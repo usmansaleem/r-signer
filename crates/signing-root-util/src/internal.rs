@@ -3,6 +3,9 @@ use anyhow::Result;
 use ssz_rs::prelude::*;
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct SszU64(pub u64);
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
 pub struct InternalBeaconBlockHeader {
     pub slot: u64,
     pub proposer_index: u64,

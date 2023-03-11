@@ -64,6 +64,28 @@ fn signing_root_for_sign_attestation_data_is_calculated() {
 }
 
 #[test]
+fn signing_root_for_sign_aggegation_slot_is_calculated() {
+    let fork_info_json = r#"{
+        "fork" : {
+          "previous_version" : "0x00000001",
+          "current_version" : "0x00000001",
+          "epoch" : "1"
+        },
+        "genesis_validators_root" : "0x04700007fabc8282644aed6d1c7c9e21d38a03a0c4ba193f3afe428824b3a673"
+    }"#;
+
+    let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
+    let aggregation_slot = AggregationSlot { slot: 119 };
+
+    let expected_signing_root =
+        hex!("1fb90dd6e8b2670e6949347bc4eaacd37f9b6cc6e42c559973e362c800e853b9");
+    let signing_root =
+        signing_root_for_sign_aggegation_slot(&aggregation_slot, &fork_info).unwrap();
+
+    assert_eq!(signing_root, expected_signing_root);
+}
+
+#[test]
 fn compute_domain_works() {
     let domain_type = hex!("03000000");
     let fork_version = hex!("00000001");

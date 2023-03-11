@@ -6,7 +6,9 @@ mod internal;
 #[cfg(test)]
 mod tests;
 
-use crate::internal::{InternalAttestationData, InternalBeaconBlockHeader, InternalForkData};
+use crate::internal::{
+    InternalAttestationData, InternalBeaconBlockHeader, InternalForkData, SszU64,
+};
 use anyhow::Result;
 use serde_aux::prelude::deserialize_number_from_string;
 use serde_hex::{SerHex, StrictPfx};
@@ -66,6 +68,12 @@ pub struct AttestationData {
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AggregationSlot {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub slot: u64,
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Checkpoint {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub epoch: u64,
@@ -77,11 +85,20 @@ pub fn signing_root_for_sign_block_header(
     block_header: &BeaconBlockHeader,
     fork_info: &ForkInfo,
 ) -> Result<Bytes32> {
-    let mut internal_block_header = InternalBeaconBlockHeader::try_from(block_header).unwrap();
-    let block_header_root = internal_block_header.hash_tree_root()?;
-    let domain = get_domain_sign_block(block_header.slot, fork_info)?;
+    //TODO Move these constants
+    let beacon_proposer: Bytes4 = [0, 0, 0, 0];
 
-    let result_vec = internal::compute_signing_root(&block_header_root, &domain)?;
+    let domain = get_domain(
+        fork_info,
+        &beacon_proposer,
+        compute_epoch_at_slot(block_header.slot),
+    )?;
+
+    let hash_tree_root = InternalBeaconBlockHeader::try_from(block_header)
+        .unwrap()
+        .hash_tree_root()?;
+
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
     let result: Bytes32 = result_vec
         .try_into()
         .map_err(|_| SigningRootError::VectorConversionError)?;
@@ -112,13 +129,28 @@ pub fn signing_root_for_sign_attestation_data(
     Ok(result)
 }
 
-fn get_domain_sign_block(slot: u64, fork_info: &ForkInfo) -> Result<Bytes32> {
-    //TODO Move these constants
-    let beacon_proposer: Bytes4 = [0, 0, 0, 0];
+pub fn signing_root_for_sign_aggegation_slot(
+    aggregation_slot: &AggregationSlot,
+    fork_info: &ForkInfo,
+) -> Result<Bytes32> {
+    // TODO: Move as constant
+    let domain_selection_proof: Bytes4 = hex_literal::hex!("05000000");
 
-    get_domain(fork_info, &beacon_proposer, compute_epoch_at_slot(slot))
+    let domain = get_domain(
+        fork_info,
+        &domain_selection_proof,
+        compute_epoch_at_slot(aggregation_slot.slot),
+    )?;
+    let hash_tree_root = SszU64(aggregation_slot.slot).hash_tree_root()?;
+
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
+    let result: Bytes32 = result_vec
+        .try_into()
+        .map_err(|_| SigningRootError::VectorConversionError)?;
+    Ok(result)
 }
 
+// TODO: This will be removed in near future ... this needs to be derived from network spec
 fn compute_epoch_at_slot(slot: u64) -> u64 {
     // TODO: determine slots_per_epocs from spec configs
     let slots_per_epochs: u64 = 32;
