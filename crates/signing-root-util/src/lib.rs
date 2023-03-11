@@ -1,4 +1,5 @@
 //! Library that exposes various datastructures and ssz hash tree root computation
+// / TODO: determine slots_per_epochs from spec config (or --network flag) slots_per_epochs: u64 = 32;
 
 mod internal;
 
