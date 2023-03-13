@@ -21,9 +21,9 @@ impl TryFrom<&BeaconBlockHeader> for InternalBeaconBlockHeader {
         Ok(Self {
             slot: value.slot,
             proposer_index: value.proposer_index,
-            parent_root: value.parent_root,
-            state_root: value.state_root,
-            body_root: value.body_root,
+            parent_root: value.parent_root.0,
+            state_root: value.state_root.0,
+            body_root: value.body_root.0,
         })
     }
 }
@@ -35,7 +35,7 @@ pub struct InternalForkData {
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
-struct InternalSigningData {
+pub struct InternalSigningData {
     pub object_root: Node,
     pub domain: [u8; 32],
 }
@@ -62,14 +62,14 @@ impl TryFrom<&AttestationData> for InternalAttestationData {
         Ok(Self {
             slot: value.slot,
             index: value.index,
-            beacon_block_root: value.beacon_block_root,
+            beacon_block_root: value.beacon_block_root.0,
             source: InternalCheckpoint {
                 epoch: value.source.epoch,
-                root: value.source.root,
+                root: value.source.root.0,
             },
             target: InternalCheckpoint {
                 epoch: value.target.epoch,
-                root: value.target.root,
+                root: value.target.root.0,
             },
         })
     }

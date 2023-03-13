@@ -2,91 +2,23 @@
 // / TODO: determine slots_per_epochs from spec config (or --network flag) slots_per_epochs: u64 = 32;
 
 mod internal;
-
 #[cfg(test)]
 mod tests;
+pub mod types;
 
 use crate::internal::{
     InternalAttestationData, InternalBeaconBlockHeader, InternalForkData, SszU64,
 };
+use crate::types::*;
 use anyhow::Result;
-use serde_aux::prelude::deserialize_number_from_string;
-use serde_hex::{SerHex, StrictPfx};
 use ssz_rs::Merkleized;
-use thiserror::Error;
-
-pub type Bytes4 = [u8; 4];
-pub type Bytes32 = [u8; 32];
-
-#[derive(Error, Debug)]
-enum SigningRootError {
-    #[error("Unexpected Error in converting vector to array")]
-    VectorConversionError,
-}
-
-#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-pub struct BeaconBlockHeader {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub slot: u64,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub proposer_index: u64,
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub parent_root: Bytes32,
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub state_root: Bytes32,
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub body_root: Bytes32,
-}
-
-#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Fork {
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub previous_version: Bytes4,
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub current_version: Bytes4,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub epoch: u64,
-}
-
-#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ForkInfo {
-    pub fork: Fork,
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub genesis_validators_root: Bytes32,
-}
-
-#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-pub struct AttestationData {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub slot: u64,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub index: u64,
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub beacon_block_root: Bytes32,
-    pub source: Checkpoint,
-    pub target: Checkpoint,
-}
-
-#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-pub struct AggregationSlot {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub slot: u64,
-}
-
-#[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Checkpoint {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub epoch: u64,
-    #[serde(with = "SerHex::<StrictPfx>")]
-    pub root: Bytes32,
-}
 
 pub fn signing_root_for_sign_block_header(
     block_header: &BeaconBlockHeader,
     fork_info: &ForkInfo,
 ) -> Result<Bytes32> {
     //TODO Move these constants
-    let beacon_proposer: Bytes4 = [0, 0, 0, 0];
+    let beacon_proposer: Bytes4 = Bytes4([0, 0, 0, 0]);
 
     let domain = get_domain(
         fork_info,
@@ -98,10 +30,12 @@ pub fn signing_root_for_sign_block_header(
         .unwrap()
         .hash_tree_root()?;
 
-    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
-    let result: Bytes32 = result_vec
-        .try_into()
-        .map_err(|_| SigningRootError::VectorConversionError)?;
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain.0)?;
+    let result: Bytes32 = Bytes32(
+        result_vec
+            .try_into()
+            .map_err(|_| SigningRootError::VectorConversionError)?,
+    );
     Ok(result)
 }
 
@@ -110,7 +44,7 @@ pub fn signing_root_for_sign_attestation_data(
     fork_info: &ForkInfo,
 ) -> Result<Bytes32> {
     // TODO: Move as constant
-    let domain_beacon_attester: Bytes4 = hex_literal::hex!("01000000");
+    let domain_beacon_attester: Bytes4 = Bytes4(hex_literal::hex!("01000000"));
 
     let domain = get_domain(
         fork_info,
@@ -122,10 +56,12 @@ pub fn signing_root_for_sign_attestation_data(
         .unwrap() // will not panic
         .hash_tree_root()?;
 
-    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
-    let result: Bytes32 = result_vec
-        .try_into()
-        .map_err(|_| SigningRootError::VectorConversionError)?;
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain.0)?;
+    let result: Bytes32 = Bytes32(
+        result_vec
+            .try_into()
+            .map_err(|_| SigningRootError::VectorConversionError)?,
+    );
     Ok(result)
 }
 
@@ -134,7 +70,7 @@ pub fn signing_root_for_sign_aggegation_slot(
     fork_info: &ForkInfo,
 ) -> Result<Bytes32> {
     // TODO: Move as constant
-    let domain_selection_proof: Bytes4 = hex_literal::hex!("05000000");
+    let domain_selection_proof: Bytes4 = Bytes4(hex_literal::hex!("05000000"));
 
     let domain = get_domain(
         fork_info,
@@ -143,10 +79,12 @@ pub fn signing_root_for_sign_aggegation_slot(
     )?;
     let hash_tree_root = SszU64(aggregation_slot.slot).hash_tree_root()?;
 
-    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
-    let result: Bytes32 = result_vec
-        .try_into()
-        .map_err(|_| SigningRootError::VectorConversionError)?;
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain.0)?;
+    let result: Bytes32 = Bytes32(
+        result_vec
+            .try_into()
+            .map_err(|_| SigningRootError::VectorConversionError)?,
+    );
     Ok(result)
 }
 
@@ -164,26 +102,29 @@ fn get_domain(fork_info: &ForkInfo, domain_type: &Bytes4, epoch: u64) -> Result<
         &fork_info.fork.current_version
     };
 
-    let domain_root = compute_domain(
+    compute_domain(
         domain_type,
         fork_version,
         &fork_info.genesis_validators_root,
-    )?;
-    let result: Bytes32 = domain_root
-        .try_into()
-        .map_err(|_| SigningRootError::VectorConversionError)?;
-    Ok(result)
+    )
 }
 
 fn compute_domain(
     domain_type: &Bytes4,
     fork_version: &Bytes4,
     genesis_validators_root: &Bytes32,
-) -> Result<Vec<u8>> {
+) -> Result<Bytes32> {
     let mut fork_data = InternalForkData {
-        current_version: *fork_version,
-        genesis_validators_root: *genesis_validators_root,
+        current_version: fork_version.0,
+        genesis_validators_root: genesis_validators_root.0,
     };
     let fork_data_root = fork_data.hash_tree_root()?;
-    Ok([domain_type, &fork_data_root.as_ref()[..28]].concat())
+    let domain_root = [&domain_type.0[..], &fork_data_root.as_ref()[..28]].concat();
+
+    let result: Bytes32 = Bytes32(
+        domain_root
+            .try_into()
+            .map_err(|_| SigningRootError::VectorConversionError)?,
+    );
+    Ok(result)
 }

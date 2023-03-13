@@ -21,7 +21,9 @@ fn signing_root_for_sign_block_header_is_calculated() {
     let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
     let block_header: BeaconBlockHeader = serde_json::from_str(block_header_json).unwrap();
 
-    let signing_root = signing_root_for_sign_block_header(&block_header, &fork_info).unwrap();
+    let signing_root = signing_root_for_sign_block_header(&block_header, &fork_info)
+        .unwrap()
+        .0;
     assert_eq!(
         signing_root,
         hex!("26d0ee0b6c2261cd6010112a024de4f3d2e1e9844d11d60b057fac344c745464")
@@ -57,8 +59,9 @@ fn signing_root_for_sign_attestation_data_is_calculated() {
 
     let expected_signing_root =
         hex!("548c9a015f4c96cb8b1ddbbdfca85846f85bf9f344a434c140f378cdfb5341f0");
-    let signing_root =
-        signing_root_for_sign_attestation_data(&attestation_data, &fork_info).unwrap();
+    let signing_root = signing_root_for_sign_attestation_data(&attestation_data, &fork_info)
+        .unwrap()
+        .0;
 
     assert_eq!(signing_root, expected_signing_root);
 }
@@ -79,8 +82,9 @@ fn signing_root_for_sign_aggegation_slot_is_calculated() {
 
     let expected_signing_root =
         hex!("1fb90dd6e8b2670e6949347bc4eaacd37f9b6cc6e42c559973e362c800e853b9");
-    let signing_root =
-        signing_root_for_sign_aggegation_slot(&aggregation_slot, &fork_info).unwrap();
+    let signing_root = signing_root_for_sign_aggegation_slot(&aggregation_slot, &fork_info)
+        .unwrap()
+        .0;
 
     assert_eq!(signing_root, expected_signing_root);
 }
@@ -92,10 +96,14 @@ fn compute_domain_works() {
     let genesis_validators_root =
         hex!("0000000000000000000000000000000000000000000000000000000000000000");
 
-    let domain_root =
-        compute_domain(&domain_type, &fork_version, &genesis_validators_root).unwrap();
+    let domain_root = compute_domain(
+        &Bytes4(domain_type),
+        &Bytes4(fork_version),
+        &Bytes32(genesis_validators_root),
+    )
+    .unwrap();
     assert_eq!(
-        domain_root,
+        domain_root.0,
         hex!("0300000018ae4ccbda9538839d79bb18ca09e23e24ae8c1550f56cbb3d84b053")
     );
 }
