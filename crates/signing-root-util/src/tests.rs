@@ -113,6 +113,32 @@ fn signing_root_for_randao_reveal_is_calculated() {
 }
 
 #[test]
+fn signing_root_for_voluntary_exit_is_calculated() {
+    let fork_info_json = r#"{
+        "fork" : {
+          "previous_version" : "0x00000001",
+          "current_version" : "0x00000001",
+          "epoch" : "1"
+        },
+        "genesis_validators_root" : "0x04700007fabc8282644aed6d1c7c9e21d38a03a0c4ba193f3afe428824b3a673"
+    }"#;
+
+    let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
+    let voluntary_exit = VoluntaryExit {
+        epoch: 119,
+        validator_index: 0,
+    };
+
+    let expected_signing_root =
+        hex!("38e9f1cfe7926ce5366b633b7fc7113129025737394002d2637faaeefc56913d");
+    let signing_root = signing_root_for_voluntary_exit(&voluntary_exit, &fork_info)
+        .unwrap()
+        .0;
+
+    assert_eq!(signing_root, expected_signing_root);
+}
+
+#[test]
 fn compute_domain_works() {
     let domain_type = hex!("03000000");
     let fork_version = hex!("00000001");

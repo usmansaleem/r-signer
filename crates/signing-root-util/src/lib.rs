@@ -6,9 +6,7 @@ mod internal;
 mod tests;
 pub mod types;
 
-use crate::internal::{
-    InternalAttestationData, InternalBeaconBlockHeader, InternalForkData, SszU64,
-};
+use crate::internal::*;
 use crate::types::*;
 use anyhow::Result;
 use ssz_rs::Merkleized;
@@ -88,26 +86,46 @@ pub fn signing_root_for_sign_aggegation_slot(
     Ok(result)
 }
 
-pub fn signing_root_for_randao_reveal(randao_reveal: &RandaoReveal, fork_info: &ForkInfo) -> Result<Bytes32> {
+pub fn signing_root_for_randao_reveal(
+    randao_reveal: &RandaoReveal,
+    fork_info: &ForkInfo,
+) -> Result<Bytes32> {
     //TODO: Move as constant
     let domain_randao: Bytes4 = Bytes4(hex_literal::hex!("02000000"));
 
-    let domain = get_domain(
-            fork_info,
-        &domain_randao,
-        randao_reveal.epoch,
-    )?;
+    let domain = get_domain(fork_info, &domain_randao, randao_reveal.epoch)?;
 
     let hash_tree_root = SszU64(randao_reveal.epoch).hash_tree_root()?;
 
     let result_vec = internal::compute_signing_root(&hash_tree_root, &domain.0)?;
     let result: Bytes32 = Bytes32(
-            result_vec
+        result_vec
             .try_into()
             .map_err(|_| SigningRootError::VectorConversionError)?,
     );
     Ok(result)
+}
 
+pub fn signing_root_for_voluntary_exit(
+    voluntary_exit: &VoluntaryExit,
+    fork_info: &ForkInfo,
+) -> Result<Bytes32> {
+    //TODO: Move as constant
+    let domain_voluntary_exit: Bytes4 = Bytes4(hex_literal::hex!("04000000"));
+
+    let domain = get_domain(fork_info, &domain_voluntary_exit, voluntary_exit.epoch)?;
+
+    let hash_tree_root = InternalVoluntaryExit::try_from(voluntary_exit)
+        .unwrap()
+        .hash_tree_root()?;
+
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain.0)?;
+    let result: Bytes32 = Bytes32(
+        result_vec
+            .try_into()
+            .map_err(|_| SigningRootError::VectorConversionError)?,
+    );
+    Ok(result)
 }
 
 // TODO: This will be removed in near future ... this needs to be derived from network spec

@@ -1,4 +1,4 @@
-use super::{AttestationData, BeaconBlockHeader};
+use super::{AttestationData, BeaconBlockHeader, VoluntaryExit};
 use anyhow::Result;
 use ssz_rs::prelude::*;
 
@@ -44,6 +44,23 @@ pub struct InternalSigningData {
 pub struct InternalCheckpoint {
     pub epoch: u64,
     pub root: [u8; 32],
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct InternalVoluntaryExit {
+    pub epoch: u64,
+    pub validator_index: u64,
+}
+
+impl TryFrom<&VoluntaryExit> for InternalVoluntaryExit {
+    type Error = &'static str;
+
+    fn try_from(value: &VoluntaryExit) -> Result<Self, Self::Error> {
+        Ok(Self {
+            epoch: value.epoch,
+            validator_index: value.validator_index,
+        })
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]

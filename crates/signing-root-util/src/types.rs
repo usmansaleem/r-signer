@@ -69,3 +69,11 @@ pub struct RandaoReveal {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub epoch: u64,
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct VoluntaryExit {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub epoch: u64,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub validator_index: u64,
+}
