@@ -88,6 +88,28 @@ pub fn signing_root_for_sign_aggegation_slot(
     Ok(result)
 }
 
+pub fn signing_root_for_randao_reveal(randao_reveal: &RandaoReveal, fork_info: &ForkInfo) -> Result<Bytes32> {
+    //TODO: Move as constant
+    let domain_randao: Bytes4 = Bytes4(hex_literal::hex!("02000000"));
+
+    let domain = get_domain(
+            fork_info,
+        &domain_randao,
+        randao_reveal.epoch,
+    )?;
+
+    let hash_tree_root = SszU64(randao_reveal.epoch).hash_tree_root()?;
+
+    let result_vec = internal::compute_signing_root(&hash_tree_root, &domain.0)?;
+    let result: Bytes32 = Bytes32(
+            result_vec
+            .try_into()
+            .map_err(|_| SigningRootError::VectorConversionError)?,
+    );
+    Ok(result)
+
+}
+
 // TODO: This will be removed in near future ... this needs to be derived from network spec
 fn compute_epoch_at_slot(slot: u64) -> u64 {
     // TODO: determine slots_per_epocs from spec configs

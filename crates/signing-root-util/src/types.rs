@@ -63,3 +63,9 @@ pub struct Checkpoint {
     pub epoch: u64,
     pub root: Bytes32,
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct RandaoReveal {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub epoch: u64,
+}

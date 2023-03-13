@@ -90,6 +90,29 @@ fn signing_root_for_sign_aggegation_slot_is_calculated() {
 }
 
 #[test]
+fn signing_root_for_randao_reveal_is_calculated() {
+    let fork_info_json = r#"{
+        "fork" : {
+          "previous_version" : "0x00000001",
+          "current_version" : "0x00000001",
+          "epoch" : "1"
+        },
+        "genesis_validators_root" : "0x04700007fabc8282644aed6d1c7c9e21d38a03a0c4ba193f3afe428824b3a673"
+    }"#;
+
+    let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
+    let randao = RandaoReveal { epoch: 3 };
+
+    let expected_signing_root =
+        hex!("3d047c51a8b03630781dc4c5519c17f7de87174246ff2deed0f195c6c775f91e");
+    let signing_root = signing_root_for_randao_reveal(&randao, &fork_info)
+        .unwrap()
+        .0;
+
+    assert_eq!(signing_root, expected_signing_root);
+}
+
+#[test]
 fn compute_domain_works() {
     let domain_type = hex!("03000000");
     let fork_version = hex!("00000001");
