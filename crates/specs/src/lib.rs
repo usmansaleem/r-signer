@@ -22,16 +22,17 @@ const PRESETS_MINIMAL: [&str; 5] = [
 ];
 
 const PRESETS_MAINNET: [&str; 5] = [
-    include_str!("../presets/minimal/phase0.yaml"),
-    include_str!("../presets/minimal/altair.yaml"),
-    include_str!("../presets/minimal/bellatrix.yaml"),
-    include_str!("../presets/minimal/capella.yaml"),
-    include_str!("../presets/minimal/deneb.yaml"),
+    include_str!("../presets/mainnet/phase0.yaml"),
+    include_str!("../presets/mainnet/altair.yaml"),
+    include_str!("../presets/mainnet/bellatrix.yaml"),
+    include_str!("../presets/mainnet/capella.yaml"),
+    include_str!("../presets/mainnet/deneb.yaml"),
 ];
 
-// predefined configs
-const MINIMAL_CONFIG: &str = include_str!("../configs/minimal/config.yaml");
-const MAINNET_CONFIG: &str = include_str!("../configs/mainnet/config.yaml");
+static PREDEFINED_CONFIGS: phf::Map<&'static str, &'static str> = phf::phf_map! {
+    "minimal" => include_str!("../configs/minimal/config.yaml"),
+    "mainnet" => include_str!("../configs/mainnet/config.yaml")
+};
 
 #[derive(Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
@@ -130,25 +131,39 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn mainnet() -> Result<Self> {
-        let mut figment = Figment::new();
-        for presets in PRESETS_MAINNET {
-            figment = figment.merge(Yaml::string(presets));
-        }
-        figment
-            .merge(Yaml::string(MAINNET_CONFIG))
-            .extract()
-            .map_err(|e| anyhow!("Error extracting mainnet config: {}", e))
-    }
+    pub fn new(network: &str) -> Result<Self> {
+        //TODO If network does not exist in predefined configs, try to load it as a file.
 
-    pub fn minimal() -> Result<Self> {
-        let mut figment = Figment::new();
-        for presets in PRESETS_MINIMAL {
-            figment = figment.merge(Yaml::string(presets));
-        }
-        figment
-            .merge(Yaml::string(MINIMAL_CONFIG))
+        let config = PREDEFINED_CONFIGS
+            .get(network)
+            .ok_or(anyhow!("Predefined config {} does not exist", network))?;
+
+        let config_figment = Figment::new().merge(Yaml::string(config));
+        let preset_base_value = config_figment.find_value("PRESET_BASE")?;
+        let preset_base = preset_base_value
+            .as_str()
+            .ok_or(anyhow!("preset_base as_str error"))?;
+
+        let mut preset_figment = Figment::new();
+        preset_figment = match preset_base {
+            "mainnet" => {
+                for presets in PRESETS_MAINNET {
+                    preset_figment = preset_figment.merge(Yaml::string(presets));
+                }
+                preset_figment
+            }
+            "minimal" => {
+                for presets in PRESETS_MINIMAL {
+                    preset_figment = preset_figment.merge(Yaml::string(presets));
+                }
+                preset_figment
+            }
+            _ => anyhow::bail!("PRESET_BASE not yet supported {}", preset_base),
+        };
+
+        preset_figment
+            .merge(config_figment)
             .extract()
-            .map_err(|e| anyhow!("Error extracting minimal config: {}", e))
+            .map_err(|e| anyhow!("Error extracting config {}: {}", network, e))
     }
 }
