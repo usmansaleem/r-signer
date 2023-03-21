@@ -6,15 +6,12 @@
 #[cfg(test)]
 mod tests;
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
 use anyhow::{anyhow, Result};
 use figment::{
     providers::{Format, Yaml},
     Figment,
 };
-
-use ethereum_types::{Address, U256};
+use serde::Deserialize;
 
 const PRESETS_MINIMAL: [&str; 5] = [
     include_str!("../presets/minimal/phase0.yaml"),
@@ -33,21 +30,18 @@ const PRESETS_MAINNET: [&str; 5] = [
 ];
 
 // predefined configs
-const MINIMAL_CONFIG: &str = include_str!("../configs/minimal.yaml");
-const MAINNET_CONFIG: &str = include_str!("../configs/mainnet.yaml");
+const MINIMAL_CONFIG: &str = include_str!("../configs/minimal/config.yaml");
+const MAINNET_CONFIG: &str = include_str!("../configs/mainnet/config.yaml");
 
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub struct Spec {
     //../configs/mainnet.yaml
     preset_base: String,
     config_name: String,
-    #[serde(with = "eth2_serde_utils::quoted_u256")]
-    terminal_total_difficulty: ethereum_types::U256,
-    //    #[serde(
-    //        deserialize_with = "deserialize_bignum",
-    //        serialize_with = "serialize_bignum"
-    //    )]
+    // commenting out fields which are not used for signing root calculation and have difficulty in
+    // serde yaml deserialization
+    //terminal_total_difficulty: U256,
     //terminal_block_hash: U256, //hex
     //terminal_block_hash_activation_epoch: u64,
     min_genesis_active_validator_count: u64,
@@ -75,10 +69,6 @@ pub struct Spec {
     proposer_score_boost: u64,
     deposit_chain_id: u64,
     deposit_network_id: u64,
-    //    #[serde(
-    //        deserialize_with = "deserialize_bignum",
-    //        serialize_with = "serialize_bignum"
-    //    )]
     //deposit_contract_address: Address, //hex
 
     //../presets/mainnet/phase0.yaml
