@@ -6,12 +6,15 @@
 #[cfg(test)]
 mod tests;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use figment::{
     providers::{Format, Yaml},
     Figment,
 };
 use serde::Deserialize;
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::Path;
 
 const PRESETS_MINIMAL: [&str; 5] = [
     include_str!("../presets/minimal/phase0.yaml"),
@@ -132,13 +135,23 @@ pub struct Spec {
 
 impl Spec {
     pub fn new(network: &str) -> Result<Self> {
-        //TODO If network does not exist in predefined configs, try to load it as a file.
+        let config_figment = if PREDEFINED_CONFIGS.contains_key(network) {
+            let config = PREDEFINED_CONFIGS
+                .get(network)
+                .ok_or(anyhow!("Predefined config {} does not exist", network))?;
 
-        let config = PREDEFINED_CONFIGS
-            .get(network)
-            .ok_or(anyhow!("Predefined config {} does not exist", network))?;
+            Figment::new().merge(Yaml::string(config))
+        } else {
+            let config_path = Path::new(network);
+            let mut file = File::open(config_path).with_context(|| {
+                format!("Failed to read config file: {}", config_path.display())
+            })?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+            Figment::new().merge(Yaml::string(&contents))
+        };
 
-        let config_figment = Figment::new().merge(Yaml::string(config));
+        // determine PRESET_BASE and load appropriate preset first, then merge config with it.
         let preset_base_value = config_figment.find_value("PRESET_BASE")?;
         let preset_base = preset_base_value
             .as_str()
