@@ -174,9 +174,7 @@ fn signing_root_for_voluntary_exit_is_calculated() {
 }
 */
 #[test]
-fn signing_root_for_aggregate_and_proof_is_calculated() {
-
-}
+fn signing_root_for_aggregate_and_proof_is_calculated() {}
 
 #[test]
 fn compute_domain_works() {
