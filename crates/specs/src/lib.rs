@@ -179,4 +179,9 @@ impl Spec {
             .extract()
             .map_err(|e| anyhow!("Error extracting config {}: {}", network, e))
     }
+
+    /// Compute epoch at slot
+    pub fn compute_epoch_at_slot(&self, slot: u64) -> u64 {
+        slot / self.slots_per_epoch
+    }
 }

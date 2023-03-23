@@ -1616,6 +1616,7 @@ dependencies = [
  "serde-aux",
  "serde-hex",
  "serde_json",
+ "specs",
  "ssz-rs",
  "thiserror",
 ]

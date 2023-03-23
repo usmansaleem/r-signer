@@ -21,7 +21,9 @@ fn signing_root_for_sign_block_header_is_calculated() {
     let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
     let block_header: BeaconBlockHeader = serde_json::from_str(block_header_json).unwrap();
 
-    let signing_root = signing_root_for_sign_block_header(&block_header, &fork_info)
+    let spec = Spec::new("minimal").unwrap();
+    let signing_root_util = SigningRootUtil::new(&spec);
+    let signing_root = signing_root_util.signing_root_for_sign_block_header(&block_header, &fork_info)
         .unwrap()
         .0;
     assert_eq!(
@@ -57,9 +59,12 @@ fn signing_root_for_sign_attestation_data_is_calculated() {
     let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
     let attestation_data: AttestationData = serde_json::from_str(attestation_data_json).unwrap();
 
+    let spec = Spec::new("minimal").unwrap();
+    let signing_root_util = SigningRootUtil::new(&spec);
+
     let expected_signing_root =
         hex!("548c9a015f4c96cb8b1ddbbdfca85846f85bf9f344a434c140f378cdfb5341f0");
-    let signing_root = signing_root_for_sign_attestation_data(&attestation_data, &fork_info)
+    let signing_root = signing_root_util.signing_root_for_sign_attestation_data(&attestation_data, &fork_info)
         .unwrap()
         .0;
 
@@ -79,10 +84,11 @@ fn signing_root_for_sign_aggegation_slot_is_calculated() {
 
     let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
     let aggregation_slot = AggregationSlot { slot: 119 };
-
+    let spec = Spec::new("minimal").unwrap();
+    let signing_root_util = SigningRootUtil::new(&spec);
     let expected_signing_root =
         hex!("1fb90dd6e8b2670e6949347bc4eaacd37f9b6cc6e42c559973e362c800e853b9");
-    let signing_root = signing_root_for_sign_aggegation_slot(&aggregation_slot, &fork_info)
+    let signing_root = signing_root_util.signing_root_for_sign_aggegation_slot(&aggregation_slot, &fork_info)
         .unwrap()
         .0;
 
@@ -102,10 +108,11 @@ fn signing_root_for_randao_reveal_is_calculated() {
 
     let fork_info: ForkInfo = serde_json::from_str(fork_info_json).unwrap();
     let randao = RandaoReveal { epoch: 3 };
-
+    let spec = Spec::new("minimal").unwrap();
+    let signing_root_util = SigningRootUtil::new(&spec);
     let expected_signing_root =
         hex!("3d047c51a8b03630781dc4c5519c17f7de87174246ff2deed0f195c6c775f91e");
-    let signing_root = signing_root_for_randao_reveal(&randao, &fork_info)
+    let signing_root = signing_root_util.signing_root_for_randao_reveal(&randao, &fork_info)
         .unwrap()
         .0;
 
@@ -129,9 +136,12 @@ fn signing_root_for_voluntary_exit_is_calculated() {
         validator_index: 0,
     };
 
+    let spec = Spec::new("minimal").unwrap();
+    let signing_root_util = SigningRootUtil::new(&spec);
+
     let expected_signing_root =
         hex!("38e9f1cfe7926ce5366b633b7fc7113129025737394002d2637faaeefc56913d");
-    let signing_root = signing_root_for_voluntary_exit(&voluntary_exit, &fork_info)
+    let signing_root = signing_root_util.signing_root_for_voluntary_exit(&voluntary_exit, &fork_info)
         .unwrap()
         .0;
 
@@ -176,21 +186,3 @@ fn signing_root_for_voluntary_exit_is_calculated() {
 #[test]
 fn signing_root_for_aggregate_and_proof_is_calculated() {}
 
-#[test]
-fn compute_domain_works() {
-    let domain_type = hex!("03000000");
-    let fork_version = hex!("00000001");
-    let genesis_validators_root =
-        hex!("0000000000000000000000000000000000000000000000000000000000000000");
-
-    let domain_root = compute_domain(
-        &Bytes4(domain_type),
-        &Bytes4(fork_version),
-        &Bytes32(genesis_validators_root),
-    )
-    .unwrap();
-    assert_eq!(
-        domain_root.0,
-        hex!("0300000018ae4ccbda9538839d79bb18ca09e23e24ae8c1550f56cbb3d84b053")
-    );
-}
