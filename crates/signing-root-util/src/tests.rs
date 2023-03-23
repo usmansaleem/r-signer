@@ -23,9 +23,10 @@ fn signing_root_for_sign_block_header_is_calculated() {
 
     let spec = Spec::new("minimal").unwrap();
     let signing_root_util = SigningRootUtil::new(&spec);
-    let signing_root = signing_root_util.signing_root_for_sign_block_header(&block_header, &fork_info)
+    let signing_root = signing_root_util
+        .signing_root_for_sign_block_header(&block_header, &fork_info)
         .unwrap()
-        .0;
+        .to_fixed_bytes();
     assert_eq!(
         signing_root,
         hex!("26d0ee0b6c2261cd6010112a024de4f3d2e1e9844d11d60b057fac344c745464")
@@ -64,9 +65,10 @@ fn signing_root_for_sign_attestation_data_is_calculated() {
 
     let expected_signing_root =
         hex!("548c9a015f4c96cb8b1ddbbdfca85846f85bf9f344a434c140f378cdfb5341f0");
-    let signing_root = signing_root_util.signing_root_for_sign_attestation_data(&attestation_data, &fork_info)
+    let signing_root = *signing_root_util
+        .signing_root_for_sign_attestation_data(&attestation_data, &fork_info)
         .unwrap()
-        .0;
+        .as_fixed_bytes();
 
     assert_eq!(signing_root, expected_signing_root);
 }
@@ -88,9 +90,10 @@ fn signing_root_for_sign_aggegation_slot_is_calculated() {
     let signing_root_util = SigningRootUtil::new(&spec);
     let expected_signing_root =
         hex!("1fb90dd6e8b2670e6949347bc4eaacd37f9b6cc6e42c559973e362c800e853b9");
-    let signing_root = signing_root_util.signing_root_for_sign_aggegation_slot(&aggregation_slot, &fork_info)
+    let signing_root = *signing_root_util
+        .signing_root_for_sign_aggegation_slot(&aggregation_slot, &fork_info)
         .unwrap()
-        .0;
+        .as_fixed_bytes();
 
     assert_eq!(signing_root, expected_signing_root);
 }
@@ -112,9 +115,10 @@ fn signing_root_for_randao_reveal_is_calculated() {
     let signing_root_util = SigningRootUtil::new(&spec);
     let expected_signing_root =
         hex!("3d047c51a8b03630781dc4c5519c17f7de87174246ff2deed0f195c6c775f91e");
-    let signing_root = signing_root_util.signing_root_for_randao_reveal(&randao, &fork_info)
+    let signing_root = *signing_root_util
+        .signing_root_for_randao_reveal(&randao, &fork_info)
         .unwrap()
-        .0;
+        .as_fixed_bytes();
 
     assert_eq!(signing_root, expected_signing_root);
 }
@@ -141,9 +145,10 @@ fn signing_root_for_voluntary_exit_is_calculated() {
 
     let expected_signing_root =
         hex!("38e9f1cfe7926ce5366b633b7fc7113129025737394002d2637faaeefc56913d");
-    let signing_root = signing_root_util.signing_root_for_voluntary_exit(&voluntary_exit, &fork_info)
+    let signing_root = *signing_root_util
+        .signing_root_for_voluntary_exit(&voluntary_exit, &fork_info)
         .unwrap()
-        .0;
+        .as_fixed_bytes();
 
     assert_eq!(signing_root, expected_signing_root);
 }
@@ -185,4 +190,3 @@ fn signing_root_for_voluntary_exit_is_calculated() {
 */
 #[test]
 fn signing_root_for_aggregate_and_proof_is_calculated() {}
-

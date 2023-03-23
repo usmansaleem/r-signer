@@ -1,13 +1,8 @@
 use serde::{Deserialize, Serialize};
-use serde_aux::prelude::deserialize_number_from_string;
-use serde_hex::{SerHex, StrictPfx};
 use thiserror::Error;
 
-#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Bytes4(#[serde(with = "SerHex::<StrictPfx>")] pub [u8; 4]);
-
-#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Bytes32(#[serde(with = "SerHex::<StrictPfx>")] pub [u8; 32]);
+pub type Hash256 = ethereum_types::H256;
+pub type U64 = ethereum_types::U64;
 
 #[derive(Error, Debug)]
 pub enum SigningRootError {
@@ -17,63 +12,64 @@ pub enum SigningRootError {
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct BeaconBlockHeader {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub slot: u64,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub proposer_index: u64,
-    pub parent_root: Bytes32,
-    pub state_root: Bytes32,
-    pub body_root: Bytes32,
+    pub parent_root: Hash256,
+    pub state_root: Hash256,
+    pub body_root: Hash256,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Fork {
-    pub previous_version: Bytes4,
-    pub current_version: Bytes4,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub epoch: u64,
+    #[serde(with = "eth2_serde_utils::bytes_4_hex")]
+    pub previous_version: [u8; 4],
+    #[serde(with = "eth2_serde_utils::bytes_4_hex")]
+    pub current_version: [u8; 4],
+    pub epoch: U64,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ForkInfo {
     pub fork: Fork,
-    pub genesis_validators_root: Bytes32,
+    pub genesis_validators_root: Hash256,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct AttestationData {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub slot: u64,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub index: u64,
-    pub beacon_block_root: Bytes32,
+    pub beacon_block_root: Hash256,
     pub source: Checkpoint,
     pub target: Checkpoint,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct AggregationSlot {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub slot: u64,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Checkpoint {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub epoch: u64,
-    pub root: Bytes32,
+    pub root: Hash256,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct RandaoReveal {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub epoch: u64,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
 pub struct VoluntaryExit {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub epoch: u64,
-    #[serde(deserialize_with = "deserialize_number_from_string")]
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub validator_index: u64,
 }

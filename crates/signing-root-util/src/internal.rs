@@ -21,9 +21,9 @@ impl TryFrom<&BeaconBlockHeader> for InternalBeaconBlockHeader {
         Ok(Self {
             slot: value.slot,
             proposer_index: value.proposer_index,
-            parent_root: value.parent_root.0,
-            state_root: value.state_root.0,
-            body_root: value.body_root.0,
+            parent_root: *value.parent_root.as_fixed_bytes(),
+            state_root: *value.state_root.as_fixed_bytes(),
+            body_root: *value.body_root.as_fixed_bytes(),
         })
     }
 }
@@ -82,20 +82,20 @@ impl TryFrom<&AttestationData> for InternalAttestationData {
             beacon_block_root: value.beacon_block_root.0,
             source: InternalCheckpoint {
                 epoch: value.source.epoch,
-                root: value.source.root.0,
+                root: *value.source.root.as_fixed_bytes(),
             },
             target: InternalCheckpoint {
                 epoch: value.target.epoch,
-                root: value.target.root.0,
+                root: *value.target.root.as_fixed_bytes(),
             },
         })
     }
 }
 
-pub fn compute_signing_root(hash_tree_root: &Node, domain: &[u8; 32]) -> Result<Vec<u8>> {
+pub fn compute_signing_root(hash_tree_root: &Node, domain: &crate::Hash256) -> Result<Vec<u8>> {
     let root = InternalSigningData {
         object_root: *hash_tree_root,
-        domain: *domain,
+        domain: *domain.as_fixed_bytes(),
     }
     .hash_tree_root()?;
 
