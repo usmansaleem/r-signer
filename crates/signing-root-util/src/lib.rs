@@ -111,7 +111,7 @@ impl<'a> SigningRootUtil<'a> {
     }
 
     fn get_domain(fork_info: &ForkInfo, domain_type: &[u8; 4], epoch: u64) -> Result<Hash256> {
-        let fork_version = if epoch < fork_info.fork.epoch.as_u64() {
+        let fork_version = if epoch < fork_info.fork.epoch {
             &fork_info.fork.previous_version
         } else {
             &fork_info.fork.current_version

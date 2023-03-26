@@ -190,3 +190,47 @@ fn signing_root_for_voluntary_exit_is_calculated() {
 */
 #[test]
 fn signing_root_for_aggregate_and_proof_is_calculated() {}
+
+#[test]
+fn bls_signature_deserialize() {
+    #[derive(PartialEq, Eq, Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
+    struct Sig {
+        signature: BLSSignature,
+    }
+
+    let json_str = r#"
+    {
+        "signature" : "0xa627242e4a5853708f4ebf923960fb8192f93f2233cd347e05239d86dd9fb66b721ceec1baeae6647f498c9126074f1101a87854d674b6eebc220fd8c3d8405bdfd8e286b707975d9e00a56ec6cbbf762f23607d490f0bbb16c3e0e483d51875"
+    }
+    "#;
+
+    let sig: Sig = serde_json::from_str(json_str).unwrap();
+    assert_eq!(*sig.signature.as_fixed_bytes(), hex!("a627242e4a5853708f4ebf923960fb8192f93f2233cd347e05239d86dd9fb66b721ceec1baeae6647f498c9126074f1101a87854d674b6eebc220fd8c3d8405bdfd8e286b707975d9e00a56ec6cbbf762f23607d490f0bbb16c3e0e483d51875"))
+}
+
+#[test]
+fn aggregate_deserialize() {
+    let json_str = r#"
+    {
+      "aggregation_bits" : "0x00000101",
+      "data" : {
+        "slot" : "0",
+        "index" : "0",
+        "beacon_block_root" : "0x100814c335d0ced5014cfa9d2e375e6d9b4e197381f8ce8af0473200fdc917fd",
+        "source" : {
+          "epoch" : "0",
+          "root" : "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "target" : {
+          "epoch" : "0",
+          "root" : "0x100814c335d0ced5014cfa9d2e375e6d9b4e197381f8ce8af0473200fdc917fd"
+        }
+      },
+      "signature" : "0xa627242e4a5853708f4ebf923960fb8192f93f2233cd347e05239d86dd9fb66b721ceec1baeae6647f498c9126074f1101a87854d674b6eebc220fd8c3d8405bdfd8e286b707975d9e00a56ec6cbbf762f23607d490f0bbb16c3e0e483d51875"
+    }
+    "#;
+
+    let sig: Attestation = serde_json::from_str(json_str).unwrap();
+    assert_eq!(sig.aggregation_bits.as_slice(), hex!("00000101"));
+    assert_eq!(*sig.signature.as_fixed_bytes(), hex!("a627242e4a5853708f4ebf923960fb8192f93f2233cd347e05239d86dd9fb66b721ceec1baeae6647f498c9126074f1101a87854d674b6eebc220fd8c3d8405bdfd8e286b707975d9e00a56ec6cbbf762f23607d490f0bbb16c3e0e483d51875"))
+}

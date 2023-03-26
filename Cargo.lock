@@ -406,13 +406,14 @@ dependencies = [
 
 [[package]]
 name = "eth2_serde_utils"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "477fffc25490dfc866288273f96344c6879676a1337187fc39245cd422e10825"
+version = "0.1.1"
+source = "git+https://github.com/sigp/lighthouse#b2525d6ebde369c9010080ae2c585927449a262a"
 dependencies = [
+ "ethereum-types",
  "hex",
  "serde",
  "serde_derive",
+ "serde_json",
 ]
 
 [[package]]
@@ -1612,7 +1613,10 @@ dependencies = [
  "anyhow",
  "eth2_serde_utils",
  "ethereum-types",
+ "fixed-hash",
  "hex-literal",
+ "impl-serde",
+ "primitive-types",
  "serde",
  "serde_json",
  "specs",
@@ -2215,9 +2219,9 @@ checksum = "9aec5da331524158c6d1a4ac0ab1541149c0b9505fde06423b02f5ef0106b9f0"
 
 [[package]]
 name = "winnow"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deac0939bd6e4f24ab5919fbf751c97a8cfc8543bb083a305ed5c0c10bb241d1"
+checksum = "ae8970b36c66498d8ff1d66685dc86b91b29db0c7739899012f63a63814b4b28"
 dependencies = [
  "memchr",
 ]

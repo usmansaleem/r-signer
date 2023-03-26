@@ -18,8 +18,12 @@ serde_json = "1.0"
 anyhow = "1.0"
 thiserror = "1.0"
 hex-literal = "0.3.4"
-ethereum-types = "0.14.1"
-eth2_serde_utils = "0.1.0"
+ethereum-types = "0.14"
+primitive-types = {version="0.12", features=["default", "serde"]} # parity
+fixed-hash = "0.8" #parity
+impl-serde = "0.4.0" #parity
+#eth2_serde_utils = "0.1.0" #lighthouse
+eth2_serde_utils = {git = "https://github.com/sigp/lighthouse", package="eth2_serde_utils"}
 
 # local crate dependencies
 specs.workspace = true

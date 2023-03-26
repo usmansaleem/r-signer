@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-pub type Hash256 = ethereum_types::H256;
-pub type U64 = ethereum_types::U64;
+pub type Hash256 = primitive_types::H256;
+pub type BLSSignature = primitive_types::H768;
 
 #[derive(Error, Debug)]
 pub enum SigningRootError {
@@ -27,7 +27,8 @@ pub struct Fork {
     pub previous_version: [u8; 4],
     #[serde(with = "eth2_serde_utils::bytes_4_hex")]
     pub current_version: [u8; 4],
-    pub epoch: U64,
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub epoch: u64,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
@@ -58,6 +59,22 @@ pub struct Checkpoint {
     #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub epoch: u64,
     pub root: Hash256,
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct Attestation {
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub aggregation_bits: Vec<u8>,
+    pub data: AttestationData,
+    pub signature: BLSSignature,
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct AggregateAndProof {
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub aggregator_index: u64,
+    pub aggregate: Attestation,
+    pub selection_proof: BLSSignature,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
