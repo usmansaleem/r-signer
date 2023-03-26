@@ -39,6 +39,40 @@ impl<'a> SigningRootUtil<'a> {
         Ok(Hash256::from_slice(&result_vec))
     }
 
+    pub fn signing_root_for_randao_reveal(
+        &self,
+        randao_reveal: &RandaoReveal,
+        fork_info: &ForkInfo,
+    ) -> Result<Hash256> {
+        //TODO: Move as constant
+        let domain_randao: [u8; 4] = hex_literal::hex!("02000000");
+
+        let domain = Self::get_domain(fork_info, &domain_randao, randao_reveal.epoch)?;
+
+        let hash_tree_root = SszU64(randao_reveal.epoch).hash_tree_root()?;
+
+        let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
+        Ok(Hash256::from_slice(&result_vec))
+    }
+
+    pub fn signing_root_for_voluntary_exit(
+        &self,
+        voluntary_exit: &VoluntaryExit,
+        fork_info: &ForkInfo,
+    ) -> Result<Hash256> {
+        //TODO: Move as constant
+        let domain_voluntary_exit: [u8; 4] = hex_literal::hex!("04000000");
+
+        let domain = Self::get_domain(fork_info, &domain_voluntary_exit, voluntary_exit.epoch)?;
+
+        let hash_tree_root = InternalVoluntaryExit::try_from(voluntary_exit)
+            .unwrap()
+            .hash_tree_root()?;
+
+        let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
+        Ok(Hash256::from_slice(&result_vec))
+    }
+
     pub fn signing_root_for_sign_attestation_data(
         &self,
         attestation_data: &AttestationData,
@@ -76,35 +110,17 @@ impl<'a> SigningRootUtil<'a> {
         Ok(Hash256::from_slice(&result_vec))
     }
 
-    pub fn signing_root_for_randao_reveal(
+    pub fn signing_root_for_sign_aggregate_and_proof(
         &self,
-        randao_reveal: &RandaoReveal,
+        aggregate_and_proof: &AggregateAndProof,
         fork_info: &ForkInfo,
     ) -> Result<Hash256> {
-        //TODO: Move as constant
-        let domain_randao: [u8; 4] = hex_literal::hex!("02000000");
-
-        let domain = Self::get_domain(fork_info, &domain_randao, randao_reveal.epoch)?;
-
-        let hash_tree_root = SszU64(randao_reveal.epoch).hash_tree_root()?;
-
-        let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
-        Ok(Hash256::from_slice(&result_vec))
-    }
-
-    pub fn signing_root_for_voluntary_exit(
-        &self,
-        voluntary_exit: &VoluntaryExit,
-        fork_info: &ForkInfo,
-    ) -> Result<Hash256> {
-        //TODO: Move as constant
-        let domain_voluntary_exit: [u8; 4] = hex_literal::hex!("04000000");
-
-        let domain = Self::get_domain(fork_info, &domain_voluntary_exit, voluntary_exit.epoch)?;
-
-        let hash_tree_root = InternalVoluntaryExit::try_from(voluntary_exit)
-            .unwrap()
-            .hash_tree_root()?;
+        let epoch = self
+            .spec
+            .compute_epoch_at_slot(aggregate_and_proof.aggregate.data.slot);
+        let domain = Self::get_domain(fork_info, &hex_literal::hex!("06000000"), epoch)?;
+        let hash_tree_root =
+            InternalAggregateAndProof::try_from(aggregate_and_proof)?.hash_tree_root()?;
 
         let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
         Ok(Hash256::from_slice(&result_vec))

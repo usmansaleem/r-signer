@@ -78,7 +78,7 @@ pub struct Spec {
     //../presets/mainnet/phase0.yaml
     max_committees_per_slot: u64,
     target_committee_size: u64,
-    max_validators_per_committee: u64,
+    max_validators_per_committee: u64, // used in 'Attestation' to calculate aggregation_bits
     shuffle_round_count: u64,
     hysteresis_quotient: u64,
     hysteresis_downward_multiplier: u64,
