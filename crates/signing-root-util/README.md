@@ -5,7 +5,7 @@ Following methods are supported:
 
 - [x] `signing_root_for_sign_block_header` (Bellatrix and onward)
 - [x] `signing_root_for_sign_attestation_data`
-- [ ] `signing_root_for_sign_aggregate_and_proof`
+- [x] `signing_root_for_sign_aggregate_and_proof`
 - [x] `signing_root_for_sign_aggegation_slot`
 - [x] `signing_root_for_randao_reveal`
 - [x] `signing_root_for_voluntary_exit`
