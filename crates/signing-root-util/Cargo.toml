@@ -23,7 +23,5 @@ primitive-types = {version="0.12", features=["default", "serde"]} # parity
 fixed-hash = "0.8" #parity
 impl-serde = "0.4.0" #parity
 eth2_serde_utils = {git = "https://github.com/sigp/lighthouse", package="eth2_serde_utils"}
-bit-vec = "0.6"
-
 # local crate dependencies
 specs.workspace = true

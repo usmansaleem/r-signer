@@ -1,6 +1,5 @@
 use super::{AggregateAndProof, Attestation, AttestationData, BeaconBlockHeader, VoluntaryExit};
 use anyhow::Result;
-use bit_vec::BitVec;
 use ssz_rs::prelude::*;
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
@@ -80,7 +79,7 @@ impl TryFrom<&AttestationData> for InternalAttestationData {
         Ok(Self {
             slot: value.slot,
             index: value.index,
-            beacon_block_root: value.beacon_block_root.0,
+            beacon_block_root: *value.beacon_block_root.as_fixed_bytes(),
             source: InternalCheckpoint {
                 epoch: value.source.epoch,
                 root: *value.source.root.as_fixed_bytes(),
@@ -95,7 +94,7 @@ impl TryFrom<&AttestationData> for InternalAttestationData {
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
 pub struct InternalAttestation {
-    pub aggregation_bits: Bitlist<2048>, //the size of bit list is supposed to be maxValidatorsPerCommittee. Mainnet contains 2048
+    pub aggregation_bits: Bitlist<2048>, //TODO: the size of bit list is supposed to be maxValidatorsPerCommittee. Mainnet contains 2048
     pub data: InternalAttestationData,
     pub signature: Vector<u8, 96>,
 }
@@ -104,10 +103,9 @@ impl TryFrom<&Attestation> for InternalAttestation {
     type Error = anyhow::Error;
 
     fn try_from(value: &Attestation) -> Result<Self, Self::Error> {
-        let _bit_vec = BitVec::from_bytes(&value.aggregation_bits);
-        let aggregation_bits: Bitlist<2048> = Bitlist::from_iter(_bit_vec);
+        let aggregation_bits: Bitlist<2048> = Bitlist::try_from(value.aggregation_bits.as_slice())?;
         let data = InternalAttestationData::try_from(&value.data)?;
-        let signature = Vector::<u8, 96>::try_from(value.signature.to_fixed_bytes().to_vec())
+        let signature = Vector::<u8, 96>::try_from(value.signature.clone())
             .map_err(|_| anyhow::anyhow!("Error converting signature bytes to ssz Vector"))?;
 
         Ok(Self {
@@ -131,10 +129,8 @@ impl TryFrom<&AggregateAndProof> for InternalAggregateAndProof {
     fn try_from(value: &AggregateAndProof) -> Result<Self, Self::Error> {
         let aggregator_index = value.aggregator_index;
         let aggregate = InternalAttestation::try_from(&value.aggregate)?;
-        let selection_proof = Vector::<u8, 96>::try_from(
-            value.selection_proof.to_fixed_bytes().to_vec(),
-        )
-        .map_err(|_| anyhow::anyhow!("Error converting selection_proof bytes to ssz Vector"))?;
+        let selection_proof = Vector::<u8, 96>::try_from(value.selection_proof.clone())
+            .map_err(|_| anyhow::anyhow!("Error converting selection_proof bytes to ssz Vector"))?;
 
         Ok(Self {
             aggregator_index,

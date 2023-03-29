@@ -119,8 +119,10 @@ impl<'a> SigningRootUtil<'a> {
             .spec
             .compute_epoch_at_slot(aggregate_and_proof.aggregate.data.slot);
         let domain = Self::get_domain(fork_info, &hex_literal::hex!("06000000"), epoch)?;
-        let hash_tree_root =
-            InternalAggregateAndProof::try_from(aggregate_and_proof)?.hash_tree_root()?;
+        let mut internal_aggregate_proof =
+            InternalAggregateAndProof::try_from(aggregate_and_proof)?;
+
+        let hash_tree_root = internal_aggregate_proof.hash_tree_root()?;
 
         let result_vec = internal::compute_signing_root(&hash_tree_root, &domain)?;
         Ok(Hash256::from_slice(&result_vec))

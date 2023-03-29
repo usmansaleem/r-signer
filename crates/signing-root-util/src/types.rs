@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 pub type Hash256 = primitive_types::H256;
-pub type BLSSignature = primitive_types::H768;
 
 #[derive(Error, Debug)]
 pub enum SigningRootError {
@@ -66,7 +65,8 @@ pub struct Attestation {
     #[serde(with = "eth2_serde_utils::hex_vec")]
     pub aggregation_bits: Vec<u8>,
     pub data: AttestationData,
-    pub signature: BLSSignature,
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub signature: Vec<u8>,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
@@ -74,7 +74,8 @@ pub struct AggregateAndProof {
     #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub aggregator_index: u64,
     pub aggregate: Attestation,
-    pub selection_proof: BLSSignature,
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub selection_proof: Vec<u8>,
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
