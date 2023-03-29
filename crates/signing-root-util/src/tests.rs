@@ -232,8 +232,8 @@ fn bls_signature_hashroot() {
         signature: ssz_rs::prelude::Vector<u8, 96>,
     }
 
-    let bls_sig = hex::decode("a63f73a03f1f42b1fd0a988b614d511eb346d0a91c809694ef76df5ae021f0f144d64e612d735bc8820950cf6f7f84cd0ae194bfe3d4242fe79688f83462e3f69d9d33de71aab0721b7dab9d6960875e5fdfd26b171a75fb51af822043820c47").unwrap();
-    let bls_sig_vec = Vector::<u8, 96>::try_from(bls_sig).unwrap();
+    let bls_sig = hex!("a63f73a03f1f42b1fd0a988b614d511eb346d0a91c809694ef76df5ae021f0f144d64e612d735bc8820950cf6f7f84cd0ae194bfe3d4242fe79688f83462e3f69d9d33de71aab0721b7dab9d6960875e5fdfd26b171a75fb51af822043820c47");
+    let bls_sig_vec = Vector::<u8, 96>::try_from(bls_sig.to_vec()).unwrap();
     let mut sig = Sig {
         signature: bls_sig_vec,
     };
