@@ -1,3 +1,4 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -18,6 +19,50 @@ pub struct BeaconBlockHeader {
     pub parent_root: Hash256,
     pub state_root: Hash256,
     pub body_root: Hash256,
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub enum DomainType {
+    BeaconProposer,
+    BeaconAttester,
+    Randao,
+    Deposit,
+    VoluntaryExit,
+    SelectionProof,
+    AggregateAndProof,
+    ApplicationBuilder,
+    // altair
+    SyncCommittee,
+    SyncCommitteeSelectionProof,
+    ContributionAndProof,
+    // Capella
+    DomainBlsToExecutionChange,
+    // Deneb
+    DomainBlobSidecar,
+}
+
+impl DomainType {
+    pub fn value(&self) -> [u8; 4] {
+        match self {
+            DomainType::BeaconProposer => [0, 0, 0, 0],
+            DomainType::BeaconAttester => [1, 0, 0, 0],
+            DomainType::Randao => [2, 0, 0, 0],
+            DomainType::Deposit => [3, 0, 0, 0],
+            DomainType::VoluntaryExit => [4, 0, 0, 0],
+            DomainType::SelectionProof => [5, 0, 0, 0],
+            DomainType::AggregateAndProof => [6, 0, 0, 0],
+            DomainType::ApplicationBuilder => [7, 0, 0, 0],
+            DomainType::SyncCommittee => [7, 0, 0, 0],
+            DomainType::SyncCommitteeSelectionProof => [8, 0, 0, 0],
+            DomainType::ContributionAndProof => [9, 0, 0, 0],
+            DomainType::DomainBlsToExecutionChange => [10, 0, 0, 0],
+            DomainType::DomainBlobSidecar => [11, 0, 0, 0],
+        }
+    }
+}
+
+pub trait Domain {
+    fn compute_domain(&self, domain_type: &DomainType, epoch: u64) -> Result<Hash256>;
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]

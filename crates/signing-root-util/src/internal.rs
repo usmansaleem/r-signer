@@ -1,9 +1,25 @@
-use super::{AggregateAndProof, Attestation, AttestationData, BeaconBlockHeader, VoluntaryExit};
+use super::*;
+use crate::Hash256;
 use anyhow::Result;
 use ssz_rs::prelude::*;
 
+pub trait SigningRoot {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256>;
+}
+
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
 pub struct SszU64(pub u64);
+
+impl SigningRoot for SszU64 {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
+    }
+}
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
 pub struct InternalBeaconBlockHeader {
@@ -25,6 +41,17 @@ impl TryFrom<&BeaconBlockHeader> for InternalBeaconBlockHeader {
             state_root: *value.state_root.as_fixed_bytes(),
             body_root: *value.body_root.as_fixed_bytes(),
         })
+    }
+}
+
+impl SigningRoot for InternalBeaconBlockHeader {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
     }
 }
 
@@ -63,6 +90,17 @@ impl TryFrom<&VoluntaryExit> for InternalVoluntaryExit {
     }
 }
 
+impl SigningRoot for InternalVoluntaryExit {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
 pub struct InternalAttestationData {
     pub slot: u64,
@@ -89,6 +127,17 @@ impl TryFrom<&AttestationData> for InternalAttestationData {
                 root: *value.target.root.as_fixed_bytes(),
             },
         })
+    }
+}
+
+impl SigningRoot for InternalAttestationData {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
     }
 }
 
@@ -140,12 +189,33 @@ impl TryFrom<&AggregateAndProof> for InternalAggregateAndProof {
     }
 }
 
-pub fn compute_signing_root(hash_tree_root: &Node, domain: &crate::Hash256) -> Result<Vec<u8>> {
-    let root = InternalSigningData {
-        object_root: *hash_tree_root,
-        domain: *domain.as_fixed_bytes(),
+impl SigningRoot for InternalAggregateAndProof {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
     }
-    .hash_tree_root()?;
+}
 
-    Ok(root.as_ref().to_vec())
+impl Domain for ForkInfo {
+    fn compute_domain(&self, domain_type: &DomainType, epoch: u64) -> Result<Hash256> {
+        let fork_version = if epoch < self.fork.epoch {
+            self.fork.previous_version
+        } else {
+            self.fork.current_version
+        };
+
+        let mut fork_data = InternalForkData {
+            current_version: fork_version,
+            genesis_validators_root: *self.genesis_validators_root.as_fixed_bytes(),
+        };
+
+        let fork_data_root = fork_data.hash_tree_root()?;
+        let domain_root = [&domain_type.value(), &fork_data_root.as_ref()[..28]].concat();
+
+        Ok(Hash256::from_slice(&domain_root))
+    }
 }
