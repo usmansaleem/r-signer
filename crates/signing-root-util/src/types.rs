@@ -136,3 +136,14 @@ pub struct VoluntaryExit {
     #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub validator_index: u64,
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct DepositMessage {
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub pubkey: Vec<u8>, // TODO: Customize for asserting length 48
+    pub withdrawal_credentials: Hash256,
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub amount: u64,
+    #[serde(with = "eth2_serde_utils::bytes_4_hex")]
+    pub genesis_fork_version: [u8; 4],
+}
