@@ -200,6 +200,41 @@ impl SigningRoot for InternalAggregateAndProof {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct InternalDepositMessage {
+    pub pubkey: Vector<u8, 48>,
+    pub withdrawal_credentials: [u8; 32],
+    pub amount: u64,
+}
+
+impl TryFrom<&DepositMessage> for InternalDepositMessage {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &DepositMessage) -> Result<Self, Self::Error> {
+        let pubkey = Vector::<u8, 48>::try_from(value.pubkey.clone())
+            .map_err(|_| anyhow::anyhow!("Error converting pubkey bytes to ssz Vector"))?;
+        let withdrawal_credentials = *value.withdrawal_credentials.as_fixed_bytes();
+        let amount = value.amount;
+
+        Ok(Self {
+            pubkey,
+            withdrawal_credentials,
+            amount,
+        })
+    }
+}
+
+impl SigningRoot for InternalDepositMessage {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
+    }
+}
+
 impl Domain for ForkInfo {
     fn compute_domain(&self, domain_type: &DomainType, epoch: u64) -> Result<Hash256> {
         let fork_version = if epoch < self.fork.epoch {
@@ -211,6 +246,22 @@ impl Domain for ForkInfo {
         let mut fork_data = InternalForkData {
             current_version: fork_version,
             genesis_validators_root: *self.genesis_validators_root.as_fixed_bytes(),
+        };
+
+        let fork_data_root = fork_data.hash_tree_root()?;
+        let domain_root = [&domain_type.value(), &fork_data_root.as_ref()[..28]].concat();
+
+        Ok(Hash256::from_slice(&domain_root))
+    }
+}
+
+impl DepositMessage {
+    pub fn compute_domain(&self) -> Result<Hash256> {
+        let domain_type = DomainType::Deposit;
+
+        let mut fork_data = InternalForkData {
+            current_version: self.genesis_fork_version,
+            genesis_validators_root: [0; 32],
         };
 
         let fork_data_root = fork_data.hash_tree_root()?;

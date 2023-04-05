@@ -85,4 +85,9 @@ impl<'a> SigningRootUtil<'a> {
 
         InternalAggregateAndProof::try_from(aggregate_and_proof)?.compute_signing_root(&domain)
     }
+
+    pub fn signing_root_for_deposit(&self, deposit_message: &DepositMessage) -> Result<Hash256> {
+        let domain = deposit_message.compute_domain()?;
+        InternalDepositMessage::try_from(deposit_message)?.compute_signing_root(&domain)
+    }
 }

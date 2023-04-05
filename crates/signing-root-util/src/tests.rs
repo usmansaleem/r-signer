@@ -287,3 +287,25 @@ fn aggregate_deserialize() {
     assert_eq!(sig.aggregation_bits.as_slice(), hex!("00000101"));
     assert_eq!(*sig.signature, hex!("a627242e4a5853708f4ebf923960fb8192f93f2233cd347e05239d86dd9fb66b721ceec1baeae6647f498c9126074f1101a87854d674b6eebc220fd8c3d8405bdfd8e286b707975d9e00a56ec6cbbf762f23607d490f0bbb16c3e0e483d51875"))
 }
+
+#[test]
+fn signing_root_for_deposit_is_calculated() {
+    let json_str = r#"{
+        "pubkey" : "0x8f82597c919c056571a05dfe83e6a7d32acf9ad8931be04d11384e95468cd68b40129864ae12745f774654bbac09b057",
+        "withdrawal_credentials" : "0x39722cbbf8b91a4b9045c5e6175f1001eac32f7fcd5eccda5c6e62fc4e638508",
+        "amount" : "32",
+        "genesis_fork_version" : "0x00000001"
+      }"#;
+    let deposit_message: DepositMessage = serde_json::from_str(json_str).unwrap();
+    let expected_signing_root =
+        hex!("3a49cdd70862ee95fed10e7494a8caa16af1be2f53612fc74dad27260bb2d711");
+
+    let spec = Spec::new("minimal").unwrap();
+    let signing_root_util = SigningRootUtil::new(&spec);
+    let computed_signing_root = *signing_root_util
+        .signing_root_for_deposit(&deposit_message)
+        .unwrap()
+        .as_fixed_bytes();
+
+    assert_eq!(computed_signing_root, expected_signing_root);
+}
