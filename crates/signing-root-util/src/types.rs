@@ -51,7 +51,7 @@ impl DomainType {
             DomainType::VoluntaryExit => [4, 0, 0, 0],
             DomainType::SelectionProof => [5, 0, 0, 0],
             DomainType::AggregateAndProof => [6, 0, 0, 0],
-            DomainType::ApplicationBuilder => [7, 0, 0, 0],
+            DomainType::ApplicationBuilder => [0, 0, 0, 1],
             DomainType::SyncCommittee => [7, 0, 0, 0],
             DomainType::SyncCommitteeSelectionProof => [8, 0, 0, 0],
             DomainType::ContributionAndProof => [9, 0, 0, 0],
@@ -146,4 +146,16 @@ pub struct DepositMessage {
     pub amount: u64,
     #[serde(with = "eth2_serde_utils::bytes_4_hex")]
     pub genesis_fork_version: [u8; 4],
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct ValidatorRegistration {
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub fee_recipient: Vec<u8>, // TODO: Customize for asserting length 20
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub gas_limit: u64,
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub timestamp: u64,
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub pubkey: Vec<u8>, // TODO: Customize for asserting length 48
 }

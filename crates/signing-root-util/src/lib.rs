@@ -90,4 +90,14 @@ impl<'a> SigningRootUtil<'a> {
         let domain = deposit_message.compute_domain()?;
         InternalDepositMessage::try_from(deposit_message)?.compute_signing_root(&domain)
     }
+
+    pub fn signing_root_for_validator_registration(
+        &self,
+        validator_registration: &ValidatorRegistration,
+    ) -> Result<Hash256> {
+        let genesis_fork_version = self.spec.genesis_fork_version();
+        let domain = validator_registration.compute_domain(&genesis_fork_version)?;
+        InternalValidatorRegistration::try_from(validator_registration)?
+            .compute_signing_root(&domain)
+    }
 }

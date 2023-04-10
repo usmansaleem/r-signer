@@ -15,4 +15,4 @@ Altair fork
 - [ ] `signing_root_for_sync_aggregator_selection_data` (SYNC_COMMITTEE_SELECTION_PROOF)
 - [ ] `signing_root_for_sync_committee_contribution_and_proof`
 Builder API
-- [ ] `signing_root_for_validator_registration`
+- [x] `signing_root_for_validator_registration`

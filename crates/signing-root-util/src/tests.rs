@@ -309,3 +309,25 @@ fn signing_root_for_deposit_is_calculated() {
 
     assert_eq!(computed_signing_root, expected_signing_root);
 }
+
+#[test]
+fn signing_root_for_validator_registration_is_calculated() {
+    let json_str = r#"{
+        "fee_recipient" : "0x6fdfab408c56b6105a76eff5c0435d09fc6ed7a9",
+        "gas_limit" : "4658411424342975020",
+        "timestamp" : "4663368873993027404",
+        "pubkey" : "0x8f82597c919c056571a05dfe83e6a7d32acf9ad8931be04d11384e95468cd68b40129864ae12745f774654bbac09b057"
+      }"#;
+    let validator_registration: ValidatorRegistration = serde_json::from_str(json_str).unwrap();
+    let expected_signing_root =
+        hex!("e4d2b3dd1e23807b90af0b1768cc7de12d4353320adb486f1bdaeed6b67009ea");
+
+    let spec = Spec::new("minimal").unwrap();
+    let signing_root_util = SigningRootUtil::new(&spec);
+    let computed_signing_root = *signing_root_util
+        .signing_root_for_validator_registration(&validator_registration)
+        .unwrap()
+        .as_fixed_bytes();
+
+    assert_eq!(computed_signing_root, expected_signing_root);
+}
