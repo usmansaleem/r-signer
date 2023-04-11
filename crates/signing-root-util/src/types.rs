@@ -166,3 +166,11 @@ pub struct SyncCommitteeMessage {
     #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub slot: u64,
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct SyncAggregatorSelectionData {
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub slot: u64,
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub subcommittee_index: u64,
+}

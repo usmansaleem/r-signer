@@ -346,3 +346,31 @@ impl SyncCommitteeMessage {
         Ok(Hash256::from_slice(root.as_ref()))
     }
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct InternalSyncAggregatorSelectionData {
+    pub slot: u64,
+    pub subcommittee_index: u64,
+}
+
+impl TryFrom<&SyncAggregatorSelectionData> for InternalSyncAggregatorSelectionData {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &SyncAggregatorSelectionData) -> Result<Self, Self::Error> {
+        Ok(Self {
+            slot: value.slot,
+            subcommittee_index: value.subcommittee_index,
+        })
+    }
+}
+
+impl SigningRoot for InternalSyncAggregatorSelectionData {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
+    }
+}
