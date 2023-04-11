@@ -332,24 +332,6 @@ fn signing_root_for_validator_registration_is_calculated() {
     assert_eq!(computed_signing_root, expected_signing_root);
 }
 
-/*
-{
-  "type" : "SYNC_COMMITTEE_MESSAGE",
-  "signingRoot" : "0xa6f60df2817ea5b52eed1fefebbad746ef64c6249fc05c90c9e0f520cc75bb95",
-  "fork_info" : {
-    "fork" : {
-      "previous_version" : "0x00000001",
-      "current_version" : "0x00000001",
-      "epoch" : "1"
-    },
-    "genesis_validators_root" : "0x04700007fabc8282644aed6d1c7c9e21d38a03a0c4ba193f3afe428824b3a673"
-  },
-  "sync_committee_message" : {
-    "beacon_block_root" : "0x235bc3400c2839fd856a524871200bd5e362db615fc4565e1870ed9a2a936464",
-    "slot" : "0"
-  }
-}
-*/
 #[test]
 fn signing_root_for_sync_committee_message_is_calculated() {
     let fork_info_json = r#"{
