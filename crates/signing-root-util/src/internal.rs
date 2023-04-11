@@ -7,6 +7,11 @@ pub trait SigningRoot {
     fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256>;
 }
 
+#[derive(PartialEq, Eq, Debug, Default, SimpleSerialize)]
+struct Bytes32 {
+    pub beacon_block_root: [u8; 32],
+}
+
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
 pub struct SszU64(pub u64);
 
@@ -321,6 +326,20 @@ impl SigningRoot for InternalValidatorRegistration {
     fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
         let root = InternalSigningData {
             object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
+    }
+}
+
+impl SyncCommitteeMessage {
+    pub fn compute_signing_root(&self, domain: &Hash256) -> Result<Hash256> {
+        let mut bytes32 = Bytes32 {
+            beacon_block_root: *self.beacon_block_root.as_fixed_bytes(),
+        };
+        let root = InternalSigningData {
+            object_root: bytes32.hash_tree_root()?,
             domain: *domain.as_fixed_bytes(),
         }
         .hash_tree_root()?;

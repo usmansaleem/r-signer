@@ -100,4 +100,15 @@ impl<'a> SigningRootUtil<'a> {
         InternalValidatorRegistration::try_from(validator_registration)?
             .compute_signing_root(&domain)
     }
+
+    pub fn signing_root_for_sync_committee_message(
+        &self,
+        sync_committee_message: &SyncCommitteeMessage,
+        fork_info: &ForkInfo,
+    ) -> Result<Hash256> {
+        let epoch = self.spec.compute_epoch_at_slot(sync_committee_message.slot);
+        let domain = fork_info.compute_domain(&DomainType::SyncCommittee, epoch)?;
+
+        sync_committee_message.compute_signing_root(&domain)
+    }
 }

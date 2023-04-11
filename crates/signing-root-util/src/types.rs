@@ -159,3 +159,10 @@ pub struct ValidatorRegistration {
     #[serde(with = "eth2_serde_utils::hex_vec")]
     pub pubkey: Vec<u8>, // TODO: Customize for asserting length 48
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct SyncCommitteeMessage {
+    pub beacon_block_root: Hash256,
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub slot: u64,
+}
