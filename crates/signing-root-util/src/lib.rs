@@ -126,4 +126,19 @@ impl<'a> SigningRootUtil<'a> {
         InternalSyncAggregatorSelectionData::try_from(sync_aggregator_selection_data)?
             .compute_signing_root(&domain)
     }
+
+    pub fn signing_root_for_sync_committee_contribution_and_proof(
+        &self,
+        contribution_and_proof: &ContributionAndProof,
+        fork_info: &ForkInfo,
+    ) -> Result<Hash256> {
+        let epoch = self
+            .spec
+            .compute_epoch_at_slot(contribution_and_proof.contribution.slot);
+
+        let domain = fork_info.compute_domain(&DomainType::ContributionAndProof, epoch)?;
+
+        InternalContributionAndProof::try_from(contribution_and_proof)?
+            .compute_signing_root(&domain)
+    }
 }

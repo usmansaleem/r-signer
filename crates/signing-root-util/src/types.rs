@@ -174,3 +174,25 @@ pub struct SyncAggregatorSelectionData {
     #[serde(with = "eth2_serde_utils::quoted_u64")]
     pub subcommittee_index: u64,
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct SyncCommitteeContribution {
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub slot: u64,
+    pub beacon_block_root: Hash256,
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub subcommittee_index: u64,
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub aggregation_bits: Vec<u8>,
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub signature: Vec<u8>,
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, Serialize, Deserialize)]
+pub struct ContributionAndProof {
+    #[serde(with = "eth2_serde_utils::quoted_u64")]
+    pub aggregator_index: u64,
+    pub contribution: SyncCommitteeContribution,
+    #[serde(with = "eth2_serde_utils::hex_vec")]
+    pub selection_proof: Vec<u8>,
+}

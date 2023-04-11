@@ -374,3 +374,68 @@ impl SigningRoot for InternalSyncAggregatorSelectionData {
         Ok(Hash256::from_slice(root.as_ref()))
     }
 }
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct InternalSyncCommitteeContribution {
+    pub slot: u64,
+    pub beacon_block_root: [u8; 32],
+    pub subcommittee_index: u64,
+    pub aggregation_bits: Bitlist<2048>, //TODO: the size of bit list is supposed to be maxValidatorsPerCommittee. Mainnet contains 2048.
+    pub signature: Vector<u8, 96>,
+}
+
+impl TryFrom<&SyncCommitteeContribution> for InternalSyncCommitteeContribution {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &SyncCommitteeContribution) -> Result<Self, Self::Error> {
+        let slot = value.slot;
+        let beacon_block_root = *value.beacon_block_root.as_fixed_bytes();
+        let subcommittee_index = value.subcommittee_index;
+        let aggregation_bits: Bitlist<2048> = Bitlist::try_from(value.aggregation_bits.as_slice())?;
+        let signature = Vector::<u8, 96>::try_from(value.signature.clone())
+            .map_err(|_| anyhow::anyhow!("Error converting signature bytes to ssz Vector"))?;
+
+        Ok(Self {
+            slot,
+            beacon_block_root,
+            subcommittee_index,
+            aggregation_bits,
+            signature,
+        })
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
+pub struct InternalContributionAndProof {
+    pub aggregator_index: u64,
+    pub contribution: InternalSyncCommitteeContribution,
+    pub selection_proof: Vector<u8, 96>,
+}
+
+impl TryFrom<&ContributionAndProof> for InternalContributionAndProof {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &ContributionAndProof) -> Result<Self, Self::Error> {
+        let aggregator_index = value.aggregator_index;
+        let contribution = InternalSyncCommitteeContribution::try_from(&value.contribution)?;
+        let selection_proof = Vector::<u8, 96>::try_from(value.selection_proof.clone())
+            .map_err(|_| anyhow::anyhow!("Error converting selection_proof bytes to ssz Vector"))?;
+
+        Ok(Self {
+            aggregator_index,
+            contribution,
+            selection_proof,
+        })
+    }
+}
+
+impl SigningRoot for InternalContributionAndProof {
+    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+        let root = InternalSigningData {
+            object_root: self.hash_tree_root()?,
+            domain: *domain.as_fixed_bytes(),
+        }
+        .hash_tree_root()?;
+        Ok(Hash256::from_slice(root.as_ref()))
+    }
+}
