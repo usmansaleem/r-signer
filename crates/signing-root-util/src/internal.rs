@@ -376,22 +376,22 @@ impl SigningRoot for InternalSyncAggregatorSelectionData {
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
-pub struct InternalSyncCommitteeContribution {
+pub struct InternalSyncCommitteeContribution<const N: usize> {
     pub slot: u64,
     pub beacon_block_root: [u8; 32],
     pub subcommittee_index: u64,
-    pub aggregation_bits: Bitlist<2048>, //TODO: the size of bit list is supposed to be maxValidatorsPerCommittee. Mainnet contains 2048.
+    pub aggregation_bits: Bitvector<N>,
     pub signature: Vector<u8, 96>,
 }
 
-impl TryFrom<&SyncCommitteeContribution> for InternalSyncCommitteeContribution {
+impl<const N: usize> TryFrom<&SyncCommitteeContribution> for InternalSyncCommitteeContribution<N> {
     type Error = anyhow::Error;
 
     fn try_from(value: &SyncCommitteeContribution) -> Result<Self, Self::Error> {
         let slot = value.slot;
         let beacon_block_root = *value.beacon_block_root.as_fixed_bytes();
         let subcommittee_index = value.subcommittee_index;
-        let aggregation_bits: Bitlist<2048> = Bitlist::try_from(value.aggregation_bits.as_slice())?;
+        let aggregation_bits = Bitvector::try_from(value.aggregation_bits.as_slice())?;
         let signature = Vector::<u8, 96>::try_from(value.signature.clone())
             .map_err(|_| anyhow::anyhow!("Error converting signature bytes to ssz Vector"))?;
 
@@ -406,13 +406,13 @@ impl TryFrom<&SyncCommitteeContribution> for InternalSyncCommitteeContribution {
 }
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, SimpleSerialize)]
-pub struct InternalContributionAndProof {
+pub struct InternalContributionAndProof<const N: usize> {
     pub aggregator_index: u64,
-    pub contribution: InternalSyncCommitteeContribution,
+    pub contribution: InternalSyncCommitteeContribution<N>,
     pub selection_proof: Vector<u8, 96>,
 }
 
-impl TryFrom<&ContributionAndProof> for InternalContributionAndProof {
+impl<const N: usize> TryFrom<&ContributionAndProof> for InternalContributionAndProof<N> {
     type Error = anyhow::Error;
 
     fn try_from(value: &ContributionAndProof) -> Result<Self, Self::Error> {
@@ -429,8 +429,8 @@ impl TryFrom<&ContributionAndProof> for InternalContributionAndProof {
     }
 }
 
-impl SigningRoot for InternalContributionAndProof {
-    fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
+impl<const N: usize> InternalContributionAndProof<N> {
+    pub fn compute_signing_root(&mut self, domain: &Hash256) -> Result<Hash256> {
         let root = InternalSigningData {
             object_root: self.hash_tree_root()?,
             domain: *domain.as_fixed_bytes(),

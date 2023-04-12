@@ -8,7 +8,7 @@ pub mod types;
 use crate::internal::*;
 use crate::types::*;
 use anyhow::Result;
-use specs::Spec;
+use specs::{Spec, SYNC_COMMITTEE_CONT_SIZE_MAINNET, SYNC_COMMITTEE_CONT_SIZE_MIMIMAL};
 
 pub struct SigningRootUtil<'a> {
     spec: &'a Spec,
@@ -138,7 +138,12 @@ impl<'a> SigningRootUtil<'a> {
 
         let domain = fork_info.compute_domain(&DomainType::ContributionAndProof, epoch)?;
 
-        InternalContributionAndProof::try_from(contribution_and_proof)?
-            .compute_signing_root(&domain)
+        if self.spec.is_minimal_preset() {
+            InternalContributionAndProof::<SYNC_COMMITTEE_CONT_SIZE_MIMIMAL>::try_from(contribution_and_proof)?
+                .compute_signing_root(&domain)
+        } else {
+            InternalContributionAndProof::<SYNC_COMMITTEE_CONT_SIZE_MAINNET>::try_from(contribution_and_proof)?
+                .compute_signing_root(&domain)
+        }
     }
 }

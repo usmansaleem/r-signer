@@ -194,5 +194,5 @@ pub struct ContributionAndProof {
     pub aggregator_index: u64,
     pub contribution: SyncCommitteeContribution,
     #[serde(with = "eth2_serde_utils::hex_vec")]
-    pub selection_proof: Vec<u8>,
+    pub selection_proof: Vec<u8>, //bls signature
 }
