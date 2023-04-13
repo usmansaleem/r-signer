@@ -13,6 +13,6 @@ Following methods are supported:
 Altair fork
 - [x] `signing_root_for_sync_committee_message`
 - [x] `signing_root_for_sync_aggregator_selection_data` (SYNC_COMMITTEE_SELECTION_PROOF)
-- [ ] `signing_root_for_sync_committee_contribution_and_proof`
+- [x] `signing_root_for_sync_committee_contribution_and_proof`
 Builder API
 - [x] `signing_root_for_validator_registration`
