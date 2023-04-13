@@ -139,11 +139,15 @@ impl<'a> SigningRootUtil<'a> {
         let domain = fork_info.compute_domain(&DomainType::ContributionAndProof, epoch)?;
 
         if self.spec.is_minimal_preset() {
-            InternalContributionAndProof::<SYNC_COMMITTEE_CONT_SIZE_MIMIMAL>::try_from(contribution_and_proof)?
-                .compute_signing_root(&domain)
+            InternalContributionAndProof::<SYNC_COMMITTEE_CONT_SIZE_MIMIMAL>::try_from(
+                contribution_and_proof,
+            )?
+            .compute_signing_root(&domain)
         } else {
-            InternalContributionAndProof::<SYNC_COMMITTEE_CONT_SIZE_MAINNET>::try_from(contribution_and_proof)?
-                .compute_signing_root(&domain)
+            InternalContributionAndProof::<SYNC_COMMITTEE_CONT_SIZE_MAINNET>::try_from(
+                contribution_and_proof,
+            )?
+            .compute_signing_root(&domain)
         }
     }
 }

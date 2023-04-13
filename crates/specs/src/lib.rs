@@ -197,5 +197,4 @@ impl Spec {
     pub fn is_minimal_preset(&self) -> bool {
         self.preset_base.to_lowercase() == "minimal"
     }
-
 }
