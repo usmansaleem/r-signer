@@ -22,7 +22,7 @@ ethereum-types = "0.14"
 primitive-types = {version="0.12", features=["default", "serde"]} # parity
 fixed-hash = "0.8" #parity
 impl-serde = "0.4.0" #parity
-ethereum_serde_utils = "0.5.1" #sigma
+ethereum_serde_utils = "0.5.2" #sigma
 
 # local crate dependencies
 specs.workspace = true
